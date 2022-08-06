@@ -1,6 +1,7 @@
 package com.hmdp.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.User;
 
@@ -23,4 +24,12 @@ public interface IUserService extends IService<User> {
      * @return 结果
      */
     public Result sendCode(String phone, HttpSession session);
+
+    /**
+     * 用户登录
+     * @param loginForm 登陆表单 使用@RequestBody接收前端的JSON字符串
+     * @param session session
+     * @return 结果
+     */
+    public Result login(LoginFormDTO loginForm, HttpSession session);
 }
