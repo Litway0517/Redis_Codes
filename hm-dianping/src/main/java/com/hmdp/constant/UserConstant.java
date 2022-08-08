@@ -8,6 +8,9 @@ public class UserConstant {
     // 用户发送验证码的超时时间
     public static final int USER_LOGIN_CODE_TIMEOUT = 2;
 
+    // 从请求头中提出token的字段名
+    public static final String AUTHORIZATION = "authorization";
+
 
 
 
