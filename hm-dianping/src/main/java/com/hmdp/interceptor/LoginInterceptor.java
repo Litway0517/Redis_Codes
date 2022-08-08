@@ -28,15 +28,15 @@ import static com.hmdp.constant.UserConstant.AUTHORIZATION;
 
 public class LoginInterceptor implements HandlerInterceptor {
 
-    private final StringRedisTemplate redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
-    public LoginInterceptor(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
+    public LoginInterceptor(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // TODO: 1- 获取session -> 改为获取请求头中的token
+        // 1- 获取session -> 改为获取请求头中的token
         String token = request.getHeader(AUTHORIZATION);
         if (StrUtil.isBlank(token)) {
             // 用户未登录 直接拦截. 返回状态码401 未授权.
@@ -44,18 +44,18 @@ public class LoginInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        // TODO: 2- 获取session中的用户 -> 改为基于token获取redis中的用户信息
+        // 2- 获取session中的用户 -> 改为基于token获取redis中的用户信息
         String loginUserKey = RedisConstants.LOGIN_USER_KEY + token;
-        Map<Object, Object> userMap = redisTemplate.opsForHash().entries(loginUserKey);
+        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(loginUserKey);
 
-        // TODO: 3- 判断用户是否存在 即是否已经登录
+        // 3- 判断用户是否存在 即是否已经登录
         if (userMap.isEmpty()) {
             // 未登录 直接拦截. 返回状态码401 未授权
             response.setStatus(401);
             return false;
         }
 
-        // TODO: 5- 将 从redis中取出来的用户转为UserDTO对象
+        // 5- 将 从redis中取出来的用户转为UserDTO对象
         UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
 
         /*
@@ -68,7 +68,7 @@ public class LoginInterceptor implements HandlerInterceptor {
             TODO: 7- 刷新token的有效期 即用户登录状态的有效期
             只有用户连续30分钟不操作才会在redis中清楚这个用户 这也是session的做法
          */
-        redisTemplate.expire(loginUserKey, RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(loginUserKey, RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
 
         return true;
     }
