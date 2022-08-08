@@ -39,8 +39,8 @@ import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
-    @Resource
-    private StringRedisTemplate redisTemplate;
+    @Resource(name = "stringRedisTemplate")
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 发送验证码
@@ -65,7 +65,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             因此我们加上USER_LOGIN_KEY的业务前缀
             设置为30秒
          */
-        redisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL, TimeUnit.SECONDS);
+        stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL, TimeUnit.SECONDS);
 
         // 5- 发送验证码 这里面需要调用其他的服务 不是重点 所以以日志方式输出
         log.debug("发送验证码成功，验证码：{}", code);
@@ -94,7 +94,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
 
         // 2- 校验验证码 -> 从redis中获取验证码
-        String cacheCode = redisTemplate.opsForValue().get(LOGIN_CODE_KEY + phone);
+        String cacheCode = stringRedisTemplate.opsForValue().get(LOGIN_CODE_KEY + phone);
         String code = loginForm.getCode();
         if (cacheCode == null) {
             return Result.fail("验证码已经超时，请重新发送！");
@@ -124,9 +124,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 7.3 存储 -> 改为存储到redis key的结构是token value的结构是hash
         String tokenKey = LOGIN_USER_KEY + token;
-        redisTemplate.opsForHash().putAll(tokenKey, userMap);
+        stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
         // 设置有效期
-        redisTemplate.expire(tokenKey, LOGIN_USER_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(tokenKey, LOGIN_USER_TTL, TimeUnit.MINUTES);
 
         // 返回token
         return Result.ok();
