@@ -13,6 +13,8 @@ spring:
   redis:
     host: localhost
     port: 6379
+    # 选择12号库
+    database: 12
     # password: 123321
     lettuce:
       pool:
