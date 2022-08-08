@@ -124,7 +124,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
         /*
             因为StringRedisTemplate是一个存储<String, String>的模板 但是UserDTO的id是Long 因此需要转换
-            setFieldValueEditor是字段值的修改器, 接受一个函数, 函数接收两个参数, 字段名, 字段值. 返回值是修改后的字段值.
+            setFieldValueEditor是字段值的修改器, 接收一个函数, 函数接收两个参数, 字段名, 字段值. 返回值是修改后的字段值.
          */
         Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
                 CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
