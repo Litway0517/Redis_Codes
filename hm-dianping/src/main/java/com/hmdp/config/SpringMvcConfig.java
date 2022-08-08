@@ -2,9 +2,12 @@ package com.hmdp.config;
 
 import com.hmdp.interceptor.LoginInterceptor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import javax.annotation.Resource;
 
 
 /*
@@ -14,9 +17,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class SpringMvcConfig implements WebMvcConfigurer {
 
+    // @Configuration注解表示改类由Spring容器进行管理
+    @Resource
+    private StringRedisTemplate redisTemplate;
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        InterceptorRegistration loginInterceptor = registry.addInterceptor(new LoginInterceptor());
+        InterceptorRegistration loginInterceptor = registry.addInterceptor(new LoginInterceptor(redisTemplate));
         // 放行以下请求 /**表示放行所有
         loginInterceptor.excludePathPatterns(
                 "/user/code",
