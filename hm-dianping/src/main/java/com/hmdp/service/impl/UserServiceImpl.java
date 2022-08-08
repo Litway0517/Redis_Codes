@@ -17,7 +17,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -79,11 +78,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * 用户登录
      *
      * @param loginForm 登陆表单 使用@RequestBody接收前端的JSON字符串
-     * @param session   session
      * @return 结果
      */
     @Override
-    public Result login(LoginFormDTO loginForm, HttpSession session) {
+    public Result login(LoginFormDTO loginForm) {
         /*
             采用反向校验 这样不用嵌套 不然就越套越深
          */

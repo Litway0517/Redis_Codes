@@ -27,8 +27,7 @@ public interface IUserService extends IService<User> {
     /**
      * 用户登录
      * @param loginForm 登陆表单 使用@RequestBody接收前端的JSON字符串
-     * @param session session
      * @return 结果
      */
-    public Result login(LoginFormDTO loginForm, HttpSession session);
+    public Result login(LoginFormDTO loginForm);
 }
