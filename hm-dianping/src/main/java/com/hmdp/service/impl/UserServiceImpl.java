@@ -11,11 +11,16 @@ import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RegexUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
+import java.util.concurrent.TimeUnit;
+
+import static com.hmdp.utils.RedisConstants.LOGIN_CODE_KEY;
+import static com.hmdp.utils.RedisConstants.LOGIN_CODE_TTL;
 import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 
 /**
@@ -29,6 +34,9 @@ import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 @Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
+
+    @Resource
+    private StringRedisTemplate redisTemplate;
 
     /**
      * 发送验证码
@@ -48,8 +56,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 3- 符合, 生成验证码
         String code = RandomUtil.randomNumbers(6);
 
-        // 4- 保存验证码到session
-        session.setAttribute("code", code);
+        // 4- 保存验证码到session -> 更改成保存到redis
+        // session.setAttribute("code", code);
+        /*
+            因为redis是一个共享的存储域 如果说直接存储 手机号 为key 那么可能其他业务也是这样 这就会覆盖数据 甚至报错
+            因此我们加上USER_LOGIN_KEY的业务前缀
+            设置为30秒
+         */
+        redisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL, TimeUnit.SECONDS);
 
         // 5- 发送验证码 这里面需要调用其他的服务 不是重点 所以以日志方式输出
         log.debug("发送验证码成功，验证码：{}", code);
@@ -80,11 +94,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
 
         // 2- 校验验证码
-        // 先从session中获取验证码
-        Object cacheCode = session.getAttribute("code");
+        // 从redis中获取验证码
+        String cacheCode = redisTemplate.opsForValue().get(LOGIN_CODE_KEY + phone);
         String code = loginForm.getCode();
-        if (cacheCode == null || !cacheCode.toString().equals(code)) {
-            // 3- 不一致则返回报错
+        if (cacheCode == null) {
+            return Result.fail("验证码已经超时");
+        }
+        if (cacheCode == null || !code.equals(cacheCode)) {
+            // 不一致
             return Result.fail("验证码错误！");
         }
 
@@ -97,9 +114,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             user = createUserWithPhone(phone);
         }
 
-        // 7- 存在 保存到session中  注意存储的时候不存储完整的User信息 必须脱敏处理 不然就会有密码等信息
+        // TODO: 7- 保存用户信息到redis中  注意存储的时候不存储完整的User信息 必须脱敏处理 不然就会有密码等信息
+
+        // TODO: 7.1 随机生成token, 作为登陆令牌
+
+        // TODO: 7.2 将User对象转换为Hash存储
+
+        // TODO: 7.3 存储
+
         session.setAttribute("user", BeanUtil.copyProperties(user, UserDTO.class));
 
+        // 返回token
         return Result.ok();
     }
 
