@@ -1,6 +1,7 @@
 package com.hmdp.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -120,7 +122,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 7.2 将User对象转换为UserDTO再转换为HashMap存储
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
-        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO);
+        /*
+            因为StringRedisTemplate是一个存储<String, String>的模板 但是UserDTO的id是Long 因此需要转换
+            setFieldValueEditor是字段值的修改器, 接受一个函数, 函数接收两个参数, 字段名, 字段值. 返回值是修改后的字段值.
+         */
+        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
 
         // 7.3 存储 -> 改为存储到redis key的结构是token value的结构是hash
         String tokenKey = LOGIN_USER_KEY + token;
