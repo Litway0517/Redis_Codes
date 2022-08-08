@@ -19,11 +19,11 @@ public class SpringMvcConfig implements WebMvcConfigurer {
 
     // @Configuration注解表示改类由Spring容器进行管理
     @Resource
-    private StringRedisTemplate redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        InterceptorRegistration loginInterceptor = registry.addInterceptor(new LoginInterceptor(redisTemplate));
+        InterceptorRegistration loginInterceptor = registry.addInterceptor(new LoginInterceptor(stringRedisTemplate));
         // 放行以下请求 /**表示放行所有
         loginInterceptor.excludePathPatterns(
                 "/user/code",
