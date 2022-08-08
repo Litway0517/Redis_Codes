@@ -3,6 +3,7 @@ package com.hmdp.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
@@ -46,11 +47,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      * 发送验证码
      *
      * @param phone   手机号
-     * @param session session
      * @return 结果
      */
     @Override
-    public Result sendCode(String phone, HttpSession session) {
+    public Result sendCode(String phone) {
         // 1- 校验手机号
         if (RegexUtils.isPhoneInvalid(phone)) {
             // 2- 如果不符合, 返回错误信息
@@ -61,7 +61,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         String code = RandomUtil.randomNumbers(6);
 
         // 4- 保存验证码到session -> 更改成保存到redis
-        // session.setAttribute("code", code);
         /*
             因为redis是一个共享的存储域 如果说直接存储 手机号 为key 那么可能其他业务也是这样 这就会覆盖数据 甚至报错
             因此我们加上USER_LOGIN_KEY的业务前缀
@@ -90,7 +89,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
          */
 
         // 因为login和sendCode是两个接口 这里必须再次校验手机号
-
         String phone = loginForm.getPhone();
         // 1- 校验提交的手机号
         if (RegexUtils.isPhoneInvalid(phone)) {
@@ -109,7 +107,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
 
         // 4- 一致 根据手机号查询用户
-        User user = query().eq("phone", phone).one();
+        User user = lambdaQuery().eq(StrUtil.isNotBlank(phone), User::getPhone, phone).one();
+
 
         // 5- 根据手机号查询用户
         if (user == null) {
