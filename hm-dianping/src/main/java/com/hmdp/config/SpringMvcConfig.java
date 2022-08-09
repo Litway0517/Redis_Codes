@@ -1,5 +1,6 @@
 package com.hmdp.config;
 
+import com.hmdp.interceptor.CommonInterceptor;
 import com.hmdp.interceptor.LoginInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,7 +24,10 @@ public class SpringMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        InterceptorRegistration loginInterceptor = registry.addInterceptor(new LoginInterceptor(stringRedisTemplate));
+        // order是能够控制拦截器的执行顺序的 数字越大表越放在后面执行 0 1 2 ...
+
+        // 登录拦截器
+        InterceptorRegistration loginInterceptor = registry.addInterceptor(new LoginInterceptor());
         // 放行以下请求 /**表示放行所有
         loginInterceptor.excludePathPatterns(
                 "/user/code",
@@ -33,6 +37,13 @@ public class SpringMvcConfig implements WebMvcConfigurer {
                 "/shop-type/**",
                 "/upload/**",
                 "/voucher/**"
-        );
+        ).order(1);
+
+        // token拦截器
+        InterceptorRegistration commonInterceptor = registry.addInterceptor(new CommonInterceptor(stringRedisTemplate));
+        // 拦截所有请求
+        commonInterceptor.addPathPatterns(
+                "/**"
+        ).order(0);
     }
 }
