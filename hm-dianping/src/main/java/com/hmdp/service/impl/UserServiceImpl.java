@@ -109,8 +109,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 4- 一致 根据手机号查询用户
         User user = lambdaQuery().eq(StrUtil.isNotBlank(phone), User::getPhone, phone).one();
 
-
-        // 5- 根据手机号查询用户
+        // 5- 用户是否存在
         if (user == null) {
             // 6- 用户不存在 那么就创建并保存
             user = createUserWithPhone(phone);
