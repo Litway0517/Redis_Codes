@@ -1,5 +1,6 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.hmdp.dto.Result;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hmdp.constant.ShopConstant.CACHE_SHOP_KEY;
 import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
 import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
+import static com.hmdp.utils.RedisConstants.LOCK_SHOP_TTL;
 
 
 /**
@@ -63,7 +65,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
         // 5- 不存在数据库中
         if (shop == null) {
-            // 将空值存储到redis中 空字符串 过期时间改成2分钟 不应该设置的太长
+            // 将空值存储到redis中 空字符串 过期时间改成2分钟 不应该设置得太长
             stringRedisTemplate.opsForValue().set(CACHE_SHOP_KEY + id, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
             return Result.fail("店铺不存在！");
         }
@@ -74,6 +76,27 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         // 7- 返回
         return Result.ok(shop);
     }
+
+    /**
+     * 尝试获取锁
+     * 通过redis的setnx命令来设置锁 这样只有第一个线程能够设置成功 其他线程设置时返回的结果均为0
+     * @param key 键
+     * @return 结果
+     */
+    private boolean tryLock(String key) {
+        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", LOCK_SHOP_TTL, TimeUnit.SECONDS);
+        return BooleanUtil.isTrue(flag);
+    }
+
+
+    /**
+     * 释放锁 实际上就是从redis中删除key键
+     * @param key 键
+     */
+    private void unlock(String key) {
+        stringRedisTemplate.delete(key);
+    }
+
 
     @Override
     @Transactional
