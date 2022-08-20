@@ -58,28 +58,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         return Result.ok(shop);
     }
 
-    /**
-     * 尝试获取锁
-     * 通过redis的setnx命令来设置锁 这样只有第一个线程能够设置成功 其他线程设置时返回的结果均为0
-     * @param key 键
-     * @return 结果
-     */
-    private boolean tryLock(String key) {
-        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", LOCK_SHOP_TTL, TimeUnit.SECONDS);
-        return BooleanUtil.isTrue(flag);
-    }
-
 
     /**
-     * 释放锁 实际上就是从redis中删除key键
-     * @param key 键
-     */
-    private void unlock(String key) {
-        stringRedisTemplate.delete(key);
-    }
-
-    /**
-     * 缓存穿透解决方法
+     * 缓存穿透解决方法: 缓存未命中 且 数据库中也不存在该店铺id对应的数据 -> 通过缓存空值来解决
      * @param id id
      * @return 结果
      */
@@ -118,7 +99,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
 
     /**
-     * 互斥锁
+     * 互斥锁 -> 利用互斥锁解决缓存击穿问题 这里实际上采用了redis的setnx指令 因为setnx只有第一个设置的线程能够设置成功
+     *          因此 后面的线程只能等待重试 这样就做到了只有第一个线程拿到锁 进而进行重建缓存
      * @param id id
      * @return 结果
      */
@@ -156,7 +138,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             // 4- 不存在 根据id查询数据库
             shop = getById(id);
 
-            // 模拟重建延时 让大量请求进入测试锁的可靠性
+            // 模拟重建延时 让大量请求进入 测试锁的可靠性
             Thread.sleep(200);
 
             // 5- 不存在数据库中
@@ -196,6 +178,28 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         stringRedisTemplate.delete(CACHE_SHOP_KEY + shop.getId());
 
         return Result.ok();
+    }
+
+
+    /**
+     * 尝试获取锁
+     * 通过redis的setnx命令来设置锁 这样只有第一个线程能够设置成功 其他线程设置时返回的结果均为0
+     * @param key 键
+     * @return 结果
+     */
+    private boolean tryLock(String key) {
+        // setIfAbsent就是setnx absent不存在
+        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key, "1", LOCK_SHOP_TTL, TimeUnit.SECONDS);
+        return BooleanUtil.isTrue(flag);
+    }
+
+
+    /**
+     * 释放锁 实际上就是从redis中删除key键
+     * @param key 键
+     */
+    private void unlock(String key) {
+        stringRedisTemplate.delete(key);
     }
 
 }
