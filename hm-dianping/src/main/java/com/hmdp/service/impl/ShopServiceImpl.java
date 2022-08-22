@@ -192,7 +192,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
         // 2- 判断是否存在
         if (StrUtil.isBlank(shopJson)) {
-            // 3- 未命中缓存直接返回null
+            // 3- 未命中缓存直接返回null (一般来说不会存在这种问题 如果未命中的话那么只能说明该店铺并不是热点店铺 没有参加活动)
             return null;
         }
 
