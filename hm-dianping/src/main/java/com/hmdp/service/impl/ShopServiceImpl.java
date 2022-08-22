@@ -64,6 +64,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
         // 逻辑过期解决缓存击穿问题
         Shop shop = queryWithLogicalExpire(id);
+        // if (shop == null) {
+        //     return Result.fail("店铺不存在！");
+        // }
 
 
         // 7- 返回
