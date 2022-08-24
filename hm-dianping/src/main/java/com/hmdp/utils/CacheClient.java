@@ -44,11 +44,12 @@ public class CacheClient {
 
     /*
         泛型方法
-            - 先定义在使用 在public后面使用小尖括号<A, B, C>定义出来再使用
+            - 泛型 -> 先定义再使用 在public后面使用小尖括号<A, B, C>定义出来再使用 名字并没有严格约束
             - 返回值类型不确定 R
             - id的类型不确定 ID
-            - 传进来一个class用来确定返回值类型
+            - 传进来一个class用来确定返回值类型 即调用者需要指明返回值类型R
             - 如果redis中不存在信息 需要到数据库中查询 但是我们并不能确定去哪个表中查询 因此需要调用者传进来一个Function<参数, 返回值>
+              Function<T, K> 其中T是这个函数的参数类型 K是这个函数的返回值类型
      */
     public <R, ID> R queryWithPassThrough(String keyPrefix,
                                           ID id, Class<R> type,
@@ -91,6 +92,9 @@ public class CacheClient {
     // 线程池
     private static final ExecutorService CACHE_REBUILD_EXECUTOR = Executors.newFixedThreadPool(10);
 
+    /*
+        泛型 和 参数的说明参考上面
+     */
     public <R, ID> R queryWithLogicalExpire(String keyPrefix, String lockKeyPrefix,
                                             ID id,
                                             Class<R> type,
