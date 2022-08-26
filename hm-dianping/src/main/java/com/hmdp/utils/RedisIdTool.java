@@ -16,7 +16,7 @@ public class RedisIdTool {
     private static final long BEGIN_TIMESTAMP = 1640995200L;
 
     /**
-     * 序列号的位数 -> 如果以后的算法设计中序列号位数增加的话 就可以改这里 灵活更改
+     * 序列号的位数 -> 如果以后的算法设计中序列号位数增加的话 就可以改这里
      */
     private static final int COUNT_BITS = 32;
 
