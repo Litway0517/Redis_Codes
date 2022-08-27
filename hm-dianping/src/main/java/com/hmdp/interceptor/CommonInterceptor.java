@@ -66,6 +66,7 @@ public class CommonInterceptor implements HandlerInterceptor {
         /*
             TODO: 6- 存在 保存到ThreadLocal 有工具类.
             注意这里仍然是保存到ThreadLocal的内存中 并不是redis 因为这个请求会被分发到不同的tomcat
+            每当请求进来Tomcat总会默认开启一个新的线程去处理这个请求, 该请求即使被分发到不同的Tomcat服务器后, 仍能获取到用户登录信息 因为用户信息保存在线程中
          */
         UserHolder.saveUser(userDTO);
 
