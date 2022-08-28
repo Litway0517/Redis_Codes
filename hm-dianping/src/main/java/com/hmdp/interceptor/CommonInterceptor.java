@@ -66,6 +66,8 @@ public class CommonInterceptor implements HandlerInterceptor {
         /*
             TODO: 6- 存在 保存到ThreadLocal 有工具类.
             注意这里仍然是保存到ThreadLocal的内存中 并不是redis 因为这个请求会被分发到不同的tomcat
+            请求到达nginx后, 有可能会被分发到不同的Tomcat中, 这样来说就会出现在第一个Tomcat中登录了, 但是在第二个Tomcat中未登录.
+            但是, 每次将登录信息保存到ThreadLocal中就不会出现这种问题. 当然每次需要从redis中查询用户登录的token令牌
             每当请求进来Tomcat总会默认开启一个新的线程去处理这个请求, 该请求即使被分发到不同的Tomcat服务器后, 仍能获取到用户登录信息 因为用户信息保存在线程中
          */
         UserHolder.saveUser(userDTO);
