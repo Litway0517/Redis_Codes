@@ -1,9 +1,6 @@
 package com.hmdp.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -13,7 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author 虎哥
@@ -22,6 +19,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
+// 映射数据库中的tb_voucher表
 @TableName("tb_voucher")
 public class Voucher implements Serializable {
 
@@ -36,6 +34,7 @@ public class Voucher implements Serializable {
     /**
      * 商铺id
      */
+    @TableField(value = "shop_id")
     private Long shopId;
 
     /**
@@ -73,7 +72,7 @@ public class Voucher implements Serializable {
      */
     private Integer status;
     /**
-     * 库存
+     * 库存 -> 该字段不存在于数据库中 exist已经说明了
      */
     @TableField(exist = false)
     private Integer stock;
