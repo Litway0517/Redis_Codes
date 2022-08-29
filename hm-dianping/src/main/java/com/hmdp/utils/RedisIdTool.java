@@ -51,7 +51,8 @@ public class RedisIdTool {
                 方法: 在key后面再加上一个日期, 还能起到一个统计效果. 比如加上单位天, 则能够统计当日的订单量, 加上月份能够统计当月的订单量.
                 在redis中, 以冒号为分隔符之后redis会自动帮助我们分层, 便于观察.
 
-                下面提示可能会报出Null错误, 其实不会: 因为
+                下面提示可能会报出Null错误, 其实不会: 因为他认为在拆箱的过程中, 如果说你redis库中压根不存在key=A的键, 那么自增可能会出现Null,
+                实际上经过实践得出, 如果redis的库中没有对应key为A的键, redis会自动创建, 并且赋值为1.
          */
         String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
         long count = stringRedisTemplate.opsForValue().increment(INCREMENT + keyPrefix + DELIMITER + date);
