@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
  * @author 虎哥
  * @since 2022-01-04
  */
-@Service
+@Service("seckillVoucherService")
 public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper, SeckillVoucher> implements ISeckillVoucherService {
 
 }
