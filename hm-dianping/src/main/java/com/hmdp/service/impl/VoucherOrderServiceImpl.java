@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdTool;
 import com.hmdp.utils.UserHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -40,6 +41,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
      * @return 结果
      */
     @Override
+    @Transactional
     public Result secKillVoucher(Long voucherId) {
         // 1- 根据优惠券id查询优惠券信息
         SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
