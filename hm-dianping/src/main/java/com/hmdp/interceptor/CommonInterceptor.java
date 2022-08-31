@@ -33,6 +33,12 @@ import static com.hmdp.constant.UserConstant.AUTHORIZATION;
         这里再使用一个拦截器解决这个问题
  */
 
+/*
+    TODO:
+        所有的请求都会被该拦截器拦截并检查是否携带了authorization请求头, 携带了该请求头则查询对应的redis用户信息并转换为User对象,
+        然后将用户信息存到当前的线程中, 无论该线程分发到哪个Tomcat服务器都会包含用户登陆的信息, 从而达到redis共享登录信息的目的.
+ */
+
 public class CommonInterceptor implements HandlerInterceptor {
 
     private final StringRedisTemplate stringRedisTemplate;
