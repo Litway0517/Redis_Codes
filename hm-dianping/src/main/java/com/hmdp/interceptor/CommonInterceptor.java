@@ -46,7 +46,7 @@ public class CommonInterceptor implements HandlerInterceptor {
         // 1- 获取session -> 改为获取请求头中的token
         String token = request.getHeader(AUTHORIZATION);
         if (StrUtil.isBlank(token)) {
-            // 直接放行 -> 不会执行下面的代码
+            // 请求中没有token: 直接放行 -> 不会执行下面的代码(放行了之后就会继续执行该请求地址请求的资源, 当然实在没有其他拦截器的情况下)
             return true;
         }
 
@@ -56,7 +56,7 @@ public class CommonInterceptor implements HandlerInterceptor {
 
         // 3- 判断用户是否存在 即是否已经登录
         if (userMap.isEmpty()) {
-            // 放行
+            // 没有获取到用户: 放行
             return true;
         }
 

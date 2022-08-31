@@ -28,7 +28,7 @@ public class SpringMvcConfig implements WebMvcConfigurer {
 
         // 登录拦截器
         InterceptorRegistration loginInterceptor = registry.addInterceptor(new LoginInterceptor());
-        // 放行以下请求 /**表示放行所有
+        // 放行以下请求 /**表示放行所有 -> 注意这里面是排除以下路径 不是拦截
         loginInterceptor.excludePathPatterns(
                 "/user/code",
                 "/user/login",
