@@ -22,6 +22,9 @@ public class RedisConstants {
     // redis自增
     public static final String INCREMENT = "Icr";
 
+    // 优惠券订单前缀
+    public static final String SECKILL_ORDER = "Seckill:Order:";
+
 
     public static final String SECKILL_STOCK_KEY = "seckill:stock:";
     public static final String BLOG_LIKED_KEY = "blog:liked:";
