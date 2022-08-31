@@ -15,30 +15,25 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hmdp.constant.UserConstant.AUTHORIZATION;
 
-
-/*
-    TODO:
-        - 这个LoginInterceptor拦截器并不是由spring容器管理的, 也就是说初始化的时候是手动new出来的, 就在SpringMvcConfig中
-        - 因此为了在LoginInterceptor中使用redisTemplate, 应该使用构造方法
-        SpringMvcConfig这个类是由spring容器进行管理创建的, 因此可以在这个配置类自动注入redisTemplate, 然后再赋值给LoginInterceptor.
-
-        不使用以上方法的话, 就在LoginInterceptor加上@Component注解
+/**
+ * TODO:
+ *         - 这个LoginInterceptor拦截器并不是由spring容器管理的, 也就是说初始化的时候是手动new出来的, 就在SpringMvcConfig中
+ *         - 因此为了在LoginInterceptor中使用redisTemplate, 应该使用构造方法
+ *         SpringMvcConfig这个类是由spring容器进行管理创建的, 因此可以在这个配置类自动注入redisTemplate, 然后再赋值给LoginInterceptor.
+ * <p>
+ *         不使用以上方法的话, 就在LoginInterceptor加上@Component注解
+ * <p>
+ *
+ * TODO:
+ *         因为LoginInterceptor拦截器仅仅拦截的是部分需要登陆的界面.
+ *         因此考虑一种情况: 那就是用户登录了之后, 30分钟内一直访问其他不需要登录的界面, 30分钟后仍然会丢掉登陆状态
+ * <p>
+ *         这里再使用一个拦截器解决这个问题
+ * <p>
+ * TODO:
+ *         所有的请求都会被该拦截器拦截并检查是否携带了authorization请求头, 携带了该请求头则查询对应的redis用户信息并转换为User对象,
+ *         然后将用户信息存到当前的线程中, 无论该线程分发到哪个Tomcat服务器都会包含用户登陆的信息, 从而达到redis共享登录信息的目的.
  */
-
-/*
-    TODO:
-        因为LoginInterceptor拦截器仅仅拦截的是部分需要登陆的界面.
-        因此考虑一种情况: 那就是用户登录了之后, 30分钟内一直访问其他不需要登录的界面, 30分钟后仍然会丢掉登陆状态
-
-        这里再使用一个拦截器解决这个问题
- */
-
-/*
-    TODO:
-        所有的请求都会被该拦截器拦截并检查是否携带了authorization请求头, 携带了该请求头则查询对应的redis用户信息并转换为User对象,
-        然后将用户信息存到当前的线程中, 无论该线程分发到哪个Tomcat服务器都会包含用户登陆的信息, 从而达到redis共享登录信息的目的.
- */
-
 public class CommonInterceptor implements HandlerInterceptor {
 
     private final StringRedisTemplate stringRedisTemplate;
