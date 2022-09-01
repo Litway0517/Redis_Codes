@@ -20,7 +20,7 @@ public class RedisConstants {
     public static final String DELIMITER = ":";
 
     // redis自增
-    public static final String INCREMENT = "Icr";
+    public static final String INCREMENT = "Icr:";
 
     // 优惠券订单前缀
     public static final String SECKILL_ORDER = "Seckill:Order:";

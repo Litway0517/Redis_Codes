@@ -55,7 +55,7 @@ public class RedisIdTool {
                 实际上经过实践得出, 如果redis的库中没有对应key为A的键, redis会自动创建, 并且赋值为1.
          */
         String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
-        long count = stringRedisTemplate.opsForValue().increment(INCREMENT + DELIMITER + keyPrefix + DELIMITER + date);
+        long count = stringRedisTemplate.opsForValue().increment(INCREMENT + keyPrefix + date);
 
         // 3- 拼接 -> 算法设计为 最高位为1(符号位)  紧接着31位为时间戳  后32为为序列号. 因此需要先将时间戳左移32位 然后再进行或运算
         return timestamp << COUNT_BITS | count;
