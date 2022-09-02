@@ -62,7 +62,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("活动已结束，下次记着早点参与呦~");
         }
 
-
         // 4- 判断 库存是否充足
         Integer stock = seckillVoucher.getStock();
         if (stock < 1) {
@@ -70,8 +69,18 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
         }
 
-        // 5- 扣减库存
-        boolean success = seckillVoucherService.lambdaUpdate().setSql("stock = stock - 1").eq(SeckillVoucher::getVoucherId, voucherId).update();
+        // 5- 扣减库存 对于最后一张优惠券有可能出现问题
+        /*
+            setSql -> 实际上就是set条件 -> set stock = stock - 1
+            这里eq就是where条件 -> 要求SeckillVoucher::getVoucherId字段
+                                (这里是lambda表达式来取字段名, 这样就不会导致输错字段名这种情况)的值为voucherId
+
+            update tb_seckill_voucher set stock = stock - 1 where id = voucherId and stock = 原stock
+         */
+        boolean success = seckillVoucherService.lambdaUpdate()
+                .setSql("stock = stock - 1")
+                .eq(SeckillVoucher::getVoucherId, voucherId)
+                .eq(SeckillVoucher::getStock, seckillVoucher.getStock()).update();
         if (!success) {
             // 原因也可能是库存不足, 所以返回这个结果
             return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
