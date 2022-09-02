@@ -36,7 +36,7 @@ public class SeckillVoucher implements Serializable {
     /**
      * 库存
      */
-    @Version
+    // @Version
     private Integer stock;
 
     /**
