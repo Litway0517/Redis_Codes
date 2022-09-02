@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static com.hmdp.utils.RedisConstants.SECKILL_ORDER;
 
@@ -76,15 +78,29 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                                 (这里是lambda表达式来取字段名, 这样就不会导致输错字段名这种情况)的值为voucherId
 
             update tb_seckill_voucher set stock = stock - 1 where id = voucherId and stock = 原stock
-            改进失败率很高的问题: 只要库存 > 0 即可成功. 但是这样会引发新的问题
+            - 改进失败率很高的问题: 只要库存 > 0 即可成功. 但是这样会引发新的问题
+            - 改进: 还是改成乐观锁, 然后加上延时和自旋, 这样解决应该会更好.
          */
         boolean success = seckillVoucherService.lambdaUpdate()
                 .setSql("stock = stock - 1")
                 .eq(SeckillVoucher::getVoucherId, voucherId)
                 .gt(SeckillVoucher::getStock, 0).update();
         if (!success) {
-            // 原因也可能是库存不足, 所以返回这个结果
-            return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
+            try {
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        secKillVoucher(voucherId);
+                    }
+                }, 20);
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            // 原因也可能是库存不足, 所以返回这个结果 -> 改成延时和自旋, 下面的代码就不用了
+            // return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
         }
 
         // 6- 新增订单信息
