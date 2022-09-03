@@ -86,21 +86,15 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 .eq(SeckillVoucher::getVoucherId, voucherId)
                 .gt(SeckillVoucher::getStock, 0).update();
         if (!success) {
-            try {
-                Timer timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        secKillVoucher(voucherId);
-                    }
-                }, 20);
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            // try {
+            //     Thread.sleep(10);
+            //     this.secKillVoucher(voucherId);
+            // } catch (Exception e) {
+            //     throw new RuntimeException(e);
+            // }
 
             // 原因也可能是库存不足, 所以返回这个结果 -> 改成延时和自旋, 下面的代码就不用了
-            // return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
+            return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
         }
 
         // 6- 新增订单信息
