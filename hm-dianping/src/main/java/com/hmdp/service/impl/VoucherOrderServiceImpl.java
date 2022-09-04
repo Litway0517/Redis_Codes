@@ -14,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import static com.hmdp.utils.RedisConstants.SECKILL_ORDER;
 
