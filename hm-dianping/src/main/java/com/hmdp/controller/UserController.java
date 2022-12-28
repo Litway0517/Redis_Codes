@@ -34,6 +34,8 @@ public class UserController {
 
     /**
      * 发送手机验证码
+     * @param phone 手机号
+     * @return {@link Result}
      */
     @PostMapping("code")
     public Result sendCode(@RequestParam("phone") String phone) {
