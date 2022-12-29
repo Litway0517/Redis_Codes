@@ -19,6 +19,7 @@ import static com.hmdp.constant.UserConstant.AUTHORIZATION;
  * TODO:
  *         - 这个LoginInterceptor拦截器并不是由spring容器管理的, 也就是说初始化的时候是手动new出来的, 就在SpringMvcConfig中
  *         - 因此为了在LoginInterceptor中使用redisTemplate, 应该使用构造方法
+ *         - LoginInterceptor拦截器, 后来封装成了CommonInterceptor
  *         SpringMvcConfig这个类是由spring容器进行管理创建的, 因此可以在这个配置类自动注入redisTemplate, 然后再赋值给LoginInterceptor.
  * <p>
  *         不使用以上方法的话, 就在LoginInterceptor加上@Component注解
