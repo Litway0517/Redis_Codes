@@ -52,7 +52,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     public Result sendCode(String phone) {
-        // 1- 校验手机号
+        // 1- 校验手机号 返回值true表示不匹配
         if (RegexUtils.isPhoneInvalid(phone)) {
             // 2- 如果不符合, 返回错误信息
             return Result.fail("手机号格式错误，请仔细检查！");
