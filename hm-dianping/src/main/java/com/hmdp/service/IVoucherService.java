@@ -14,6 +14,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IVoucherService extends IService<Voucher> {
 
+    /**
+     * 查询店铺优惠券
+     *
+     * @param shopId 店铺id
+     * @return {@link Result}
+     */
     Result queryVoucherOfShop(Long shopId);
 
     /**
