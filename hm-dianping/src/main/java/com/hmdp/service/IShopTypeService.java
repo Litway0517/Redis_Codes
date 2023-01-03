@@ -15,8 +15,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface IShopTypeService extends IService<ShopType> {
 
     /**
-     * 查询所有的商户类型
-     * @return Result
+     * 查询所有商户类型
+     *
+     * @return {@link Result}
      */
     public Result selectAllShopType();
 }
