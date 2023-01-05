@@ -54,7 +54,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
 
         // 4- 判断是否存在
         if (shopType != null && shopType.size() != 0) {
-            // 5- 将数据组织好存储到redis
+            // 5- 将数据组织好存储到redis  存储到Redis使用Zset类型, 对应ZSetOperations.TypedTuple
 
             Set<ZSetOperations.TypedTuple<String>> shopTypeTuples = new HashSet<ZSetOperations.TypedTuple<String>>();
             shopType.stream().forEach(shopTypeItem -> {
