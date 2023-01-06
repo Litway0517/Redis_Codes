@@ -47,9 +47,27 @@ public class CacheClient {
             - 泛型 -> 先定义再使用 在public后面使用小尖括号<A, B, C>定义出来再使用 名字并没有严格约束
             - 返回值类型不确定 R
             - id的类型不确定 ID
-            - 传进来一个class用来确定返回值类型 即调用者需要指明返回值类型R
+            - 方法中传进来一个class参数用来确定返回值类型 即调用者需要指明返回值类型R
             - 如果redis中不存在信息 需要到数据库中查询 但是我们并不能确定去哪个表中查询 因此需要调用者传进来一个Function<参数, 返回值>
               Function<T, K> 其中T是这个函数的参数类型 K是这个函数的返回值类型
+     */
+    /**
+     * 泛型方法
+     *      - 泛型 -> 先定义再使用 在public后面使用小尖括号<A, B, C>定义出来再使用 名字并没有严格约束
+     *      - 返回值类型不确定 R
+     *      - id的类型不确定 ID
+     *      - 方法中传进来一个class参数用来确定返回值类型 即调用者需要指明返回值类型R
+     *      - 如果redis中不存在信息 需要到数据库中查询 但是我们并不能确定去哪个表中查询 因此需要调用者传进来一个Function<参数, 返回值>
+     *        Function<T, K> 其中T是这个函数的参数类型 K是这个函数的返回值类型
+     * @param keyPrefix key值
+     * @param id 数据的id值
+     * @param type 返回值类型
+     * @param dbFallback 回调函数 指明到哪张表查询
+     * @param time 时间长度
+     * @param unit 时间单位
+     * @return 返回指定的type类型
+     * @param <R> 返回值类型
+     * @param <ID> 待进行缓存数据的唯一标志
      */
     public <R, ID> R queryWithPassThrough(String keyPrefix,
                                           ID id, Class<R> type,
@@ -57,7 +75,7 @@ public class CacheClient {
                                           Long time,
                                           TimeUnit unit) {
         String key = keyPrefix + id;
-        // 1- 从redis中查询信息 -> 返回的就是普通json串
+        // 1- 从redis中查询信息 -> 返回的就是普通json串 注意: 存到redis中的都是字符串 即使是对象也是处理为字符串后再存储的
         String json = stringRedisTemplate.opsForValue().get(key);
 
         // 2- 判断是否存在
@@ -102,7 +120,7 @@ public class CacheClient {
                                             Long time,
                                             TimeUnit unit) {
         String key = keyPrefix + id;
-        // 1- 从redis中查询信息
+        // 1- 从redis中查询信息 -> 返回的就是普通json串 注意: 存到redis中的都是字符串 即使是对象也是处理为字符串后再存储的
         String json = stringRedisTemplate.opsForValue().get(key);
 
         // 2- 判断是否存在

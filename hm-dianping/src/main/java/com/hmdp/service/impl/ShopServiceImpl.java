@@ -48,7 +48,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
 
     /**
-     * 根据商户id查询商户信息
+     * 根据商户id查询商户信息  在大型活动中, 实际上店铺就是一个热门key, 因此这里使用缓存来降低数据库压力. 针对 店铺 做缓存
      *
      * @param id id
      * @return Result
@@ -106,7 +106,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
         }
 
-        // 因为向redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
+        // (当数据库也不存在相关数据时, 想redis存储一个短暂时间的null)因此redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
         if (shopJson != null) {
             return null;
         }
@@ -131,7 +131,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     /**
      * 互斥锁 -> 利用互斥锁解决缓存击穿问题 这里实际上采用了redis的setnx指令 因为setnx只有第一个设置的线程能够设置成功
-     *          因此 后面的线程只能等待重试 这样就做到了只有第一个线程拿到锁 进而进行重建缓存
+     *          因此 后面的线程只能等待重试 这样就做到了只有其中一个线程能够拿到锁 进而进行重建缓存
      * @param id id
      * @return 结果
      */
@@ -146,7 +146,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
         }
 
-        // 因为向redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
+        // (当数据库也不存在相关数据时, 想redis存储一个短暂时间的null)因此redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
         if (shopJson != null) {
             return null;
         }
@@ -170,7 +170,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             shop = getById(id);
 
             // 模拟重建延时 让大量请求进入 测试锁的可靠性
-            Thread.sleep(200);
+            // Thread.sleep(200);
 
             // 5- 不存在数据库中
             if (shop == null) {
@@ -282,7 +282,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
      * 尝试获取锁
      * 通过redis的setnx命令来设置锁 这样只有第一个线程能够设置成功 其他线程设置时返回的结果均为0
      * @param key 键
-     * @return 结果
+     * @return flag为true则返回true 除此之外均为false
      */
     private boolean tryLock(String key) {
         // setIfAbsent就是setnx absent不存在
@@ -304,7 +304,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     public void saveShop2Redis(Long id, Long expireSeconds) throws InterruptedException {
         // 1- 查询店铺数据
         Shop shop = getById(id);
-        Thread.sleep(200);
+        // Thread.sleep(200);
 
         // 2- 封装逻辑过期时间
         RedisData redisData = new RedisData();
