@@ -254,6 +254,12 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     }
 
 
+    /**
+     * 根据id更新店铺信息 同时删除redis缓存
+     *
+     * @param shop 商店
+     * @return {@link Result}
+     */
     @Override
     @Transactional
     public Result updateShopById(Shop shop) {
