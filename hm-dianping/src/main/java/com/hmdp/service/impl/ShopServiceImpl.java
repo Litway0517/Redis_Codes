@@ -300,7 +300,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     }
 
 
-    // 将数据预热到redis
+    /**
+     * 将数据预热到redis
+     *
+     * @param id            id
+     * @param expireSeconds 到期秒
+     * @throws InterruptedException 中断异常
+     */
     public void saveShop2Redis(Long id, Long expireSeconds) throws InterruptedException {
         // 1- 查询店铺数据
         Shop shop = getById(id);
