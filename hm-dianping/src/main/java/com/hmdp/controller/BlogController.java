@@ -1,6 +1,7 @@
 package com.hmdp.controller;
 
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -51,11 +52,17 @@ public class BlogController {
         // return Result.fail("未知错误");
     }
 
+    /**
+     * 帖子点赞
+     *
+     * @param id 帖子id
+     * @return {@link Result}
+     */
     @PutMapping("/like/{id}")
     public Result likeBlog(@PathVariable("id") Long id) {
         // 修改点赞数量
-        blogService.update()
-                .setSql("liked = liked + 1").eq("id", id).update();
+        blogService.lambdaUpdate()
+                .setSql(StrUtil.isNotBlank(id.toString()), "liked = liked + 1").eq(Blog::getId, id).update();
         return Result.ok();
     }
 
