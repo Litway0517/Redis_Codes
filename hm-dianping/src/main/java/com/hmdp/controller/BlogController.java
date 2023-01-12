@@ -87,6 +87,12 @@ public class BlogController {
         // return Result.fail("未知错误");
     }
 
+    /**
+     * 查询热点帖子
+     *
+     * @param current 当前
+     * @return {@link Result}
+     */
     @GetMapping("/hot")
     public Result queryHotBlog(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         // 根据用户查询
