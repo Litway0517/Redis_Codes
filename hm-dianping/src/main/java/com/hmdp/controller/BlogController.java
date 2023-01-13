@@ -90,7 +90,7 @@ public class BlogController {
     /**
      * 查询热点帖子
      *
-     * @param current 当前
+     * @param current 当前页数
      * @return {@link Result}
      */
     @GetMapping("/hot")
@@ -99,7 +99,7 @@ public class BlogController {
         Page<Blog> page = blogService.query()
                 .orderByDesc("liked")
                 .page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
-        // 获取当前页数据
+        // 获取当前页数据 page对象中有许多数据
         List<Blog> records = page.getRecords();
         // 查询用户
         records.forEach(blog ->{
