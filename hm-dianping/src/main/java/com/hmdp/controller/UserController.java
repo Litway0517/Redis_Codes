@@ -63,6 +63,11 @@ public class UserController {
         return Result.fail("功能未完成");
     }
 
+    /**
+     * 用户点击 底部导航栏 我的
+     *
+     * @return {@link Result}
+     */
     @GetMapping("/me")
     public Result me(){
         // 获取当前登录的用户并返回
