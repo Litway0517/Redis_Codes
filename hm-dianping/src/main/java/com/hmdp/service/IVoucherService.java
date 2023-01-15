@@ -20,12 +20,12 @@ public interface IVoucherService extends IService<Voucher> {
      * @param shopId 店铺id
      * @return {@link Result}
      */
-    Result queryVoucherOfShop(Long shopId);
+    public Result queryVoucherOfShop(Long shopId);
 
     /**
      * 添加优惠券
      *
      * @param voucher 优惠券
      */
-    void addSeckillVoucher(Voucher voucher);
+    public void addSeckillVoucher(Voucher voucher);
 }

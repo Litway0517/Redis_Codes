@@ -27,6 +27,12 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
     @Resource
     private ISeckillVoucherService seckillVoucherService;
 
+    /**
+     * 查询商铺的优惠券
+     *
+     * @param shopId 商店id
+     * @return {@link Result}
+     */
     @Override
     public Result queryVoucherOfShop(Long shopId) {
         // 查询优惠券信息 -> getBaseMapper就是获取的VoucherMapper, 跟踪源码就能发现
