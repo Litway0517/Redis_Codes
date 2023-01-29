@@ -16,6 +16,12 @@ import java.util.List;
  */
 public interface VoucherMapper extends BaseMapper<Voucher> {
 
+    /**
+     * 查询店铺的优惠券信息
+     *
+     * @param shopId 店铺id
+     * @return {@link List}<{@link Voucher}>
+     */
     List<Voucher> queryVoucherOfShop(@Param("shopId") Long shopId);
 
     List<Voucher> selectAll();

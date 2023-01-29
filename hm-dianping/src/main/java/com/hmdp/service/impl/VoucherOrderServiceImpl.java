@@ -78,6 +78,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             update tb_seckill_voucher set stock = stock - 1 where id = voucherId and stock = 原stock
             - 改进失败率很高的问题: 只要库存 > 0 即可成功. 但是这样会引发新的问题
             - 改进: 还是改成乐观锁, 然后加上延时和自旋, 这样解决应该会更好. 待优化.
+                    这里面的stock相当于乐观锁里面的version版本号, 每次操作之前对比.
          */
         boolean success = seckillVoucherService.lambdaUpdate()
                 .setSql("stock = stock - 1")
