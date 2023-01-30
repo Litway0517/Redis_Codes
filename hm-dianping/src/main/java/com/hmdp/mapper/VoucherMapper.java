@@ -24,6 +24,11 @@ public interface VoucherMapper extends BaseMapper<Voucher> {
      */
     List<Voucher> queryVoucherOfShop(@Param("shopId") Long shopId);
 
+    /**
+     * 选择所有
+     *
+     * @return {@link List}<{@link Voucher}>
+     */
     List<Voucher> selectAll();
 
 
