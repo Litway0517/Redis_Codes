@@ -33,6 +33,14 @@ public class CacheClient {
     }
 
 
+    /**
+     * 设置逻辑过期时间
+     *
+     * @param key   键
+     * @param value 值
+     * @param time  时间
+     * @param unit  时间单位
+     */
     public void setWithLogicalExpire(String key, Object value, Long time, TimeUnit unit) {
         // 为了设置逻辑过期时间需要将value再封装到RedisData中
         RedisData redisData = new RedisData();
