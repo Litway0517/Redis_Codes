@@ -78,6 +78,12 @@ public class UserController {
         // return Result.fail("功能未完成");
     }
 
+    /**
+     * 用户信息
+     *
+     * @param userId 用户id
+     * @return {@link Result}
+     */
     @GetMapping("/info/{id}")
     public Result info(@PathVariable("id") Long userId){
         // 查询详情
