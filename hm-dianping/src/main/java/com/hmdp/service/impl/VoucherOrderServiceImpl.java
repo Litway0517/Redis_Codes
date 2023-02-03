@@ -69,7 +69,17 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
         }
 
-        // 5- 扣减库存 对于最后一张优惠券有可能出现问题
+        // 5- 一人一单功能(存在并发安全性问题)
+        Long userId = UserHolder.getUser().getId();
+        // 5.1- 查询订单 根据登录用户查询优惠券订单
+        Integer count = lambdaQuery().eq(VoucherOrder::getUserId, userId).eq(VoucherOrder::getVoucherId, voucherId).count();
+        // 5.2- 判断是否存在
+        if (count > 0) {
+            // 该用户已经购买过了
+            return Result.fail("该用户已经购买过本消费券了~");
+        }
+
+        // 6- 扣减库存 对于最后一张优惠券有可能出现问题
         /*
             setSql -> 实际上就是set条件 -> set stock = stock - 1
             这里eq就是where条件 -> 要求SeckillVoucher::getVoucherId字段
@@ -96,17 +106,18 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
         }
 
-        // 6- 新增订单信息
+
+        // 7- 新增订单信息
         VoucherOrder voucherOrder = new VoucherOrder();
         // 设置订单id(使用全局唯一生成工具类) | 用户id | 优惠券id
         long orderId = redisIdTool.nextId(SECKILL_ORDER);
-        Long userId = UserHolder.getUser().getId();
+
         voucherOrder.setId(orderId);
         voucherOrder.setUserId(userId);
         voucherOrder.setVoucherId(voucherId);
         save(voucherOrder);
 
-        // 7- 返回结果
+        // 8- 返回结果
         return Result.ok(orderId);
     }
 }
