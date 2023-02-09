@@ -9,6 +9,7 @@ import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdTool;
 import com.hmdp.utils.UserHolder;
+import org.apache.xmlbeans.impl.xb.xsdschema.Public;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +70,13 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
         }
 
+        return createVoucherOrder(voucherId);
+    }
+
+
+    // synchronized锁改成代码块锁
+    @Transactional
+    public synchronized Result createVoucherOrder(Long voucherId) {
         // 5- 一人一单功能(存在并发安全性问题)
         Long userId = UserHolder.getUser().getId();
         // 5.1- 查询订单 根据登录用户查询优惠券订单 直接使用lambdaQuery代表的就是voucherOrderService
