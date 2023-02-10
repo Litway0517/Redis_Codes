@@ -9,6 +9,7 @@ import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdTool;
 import com.hmdp.utils.UserHolder;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,10 +70,17 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
 
         // 将创建订单逻辑抽离出来, 作为一个方法
-        // sync锁应该锁住的是该方法, 锁的id是用户的id
+        /*
+            sync锁应该锁住的是该方法, 锁的id是用户的id
+            直接调用方法时, 使用的是this对象调用, 而this对象不是Spring动态代理的对象, 因此需要通过AopContext获取到代理对象,
+            同时引入aspectj依赖, 并在引导类上开启Aop对外暴露, 这样事务就不会失效了
+         */
         Long userId = UserHolder.getUser().getId();
         synchronized (userId.toString().intern()) {
-            return createVoucherOrder(voucherId);
+            // 获取跟事务有关的代理对象
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            // 事务提交之后才会释放锁
+            return proxy.createVoucherOrder(voucherId);
         }
     }
 
