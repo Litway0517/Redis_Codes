@@ -69,7 +69,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
 
         // 将创建订单逻辑抽离出来, 作为一个方法
-        return createVoucherOrder(voucherId);
+        // sync锁应该锁住的是该方法, 锁的id是用户的id
+        Long userId = UserHolder.getUser().getId();
+        synchronized (userId.toString().intern()) {
+            return createVoucherOrder(voucherId);
+        }
     }
 
     @Transactional
@@ -87,16 +91,16 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             如果使用userId.toString作为锁的id, 那么每次都是new一个字符串(跟进源码就能发现), 所以调用intern方法字符串常量池,
             如果字符串常量池中已有相等的string字符, 则返回池中字符串, 否则将该值加入到池中并返回引用
          */
-        synchronized(userId.toString().intern()) {
-            // 5.1- 查询订单 根据登录用户查询优惠券订单 直接使用lambdaQuery代表的就是voucherOrderService
-            Integer count = lambdaQuery().eq(VoucherOrder::getUserId, userId).eq(VoucherOrder::getVoucherId, voucherId).count();
-            // 5.2- 判断是否存在
-            if (count > 0) {
-                // 该用户已经购买过了
-                return Result.fail("该用户已经购买过本消费券了~");
-            }
 
-            // 6- 扣减库存 对于最后一张优惠券有可能出现问题
+        // 5.1- 查询订单 根据登录用户查询优惠券订单 直接使用lambdaQuery代表的就是voucherOrderService
+        Integer count = lambdaQuery().eq(VoucherOrder::getUserId, userId).eq(VoucherOrder::getVoucherId, voucherId).count();
+        // 5.2- 判断是否存在
+        if (count > 0) {
+            // 该用户已经购买过了
+            return Result.fail("该用户已经购买过本消费券了~");
+        }
+
+        // 6- 扣减库存 对于最后一张优惠券有可能出现问题
             /*
                 setSql -> 实际上就是set条件 -> set stock = stock - 1
                 这里eq就是where条件 -> 要求SeckillVoucher::getVoucherId字段
@@ -107,36 +111,36 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 - 改进: 还是改成乐观锁, 然后加上延时和自旋, 这样解决应该会更好. 待优化.
                         这里面的stock相当于乐观锁里面的version版本号, 每次操作之前对比.
              */
-            boolean success = seckillVoucherService.lambdaUpdate()
-                    .setSql("stock = stock - 1")
-                    .eq(SeckillVoucher::getVoucherId, voucherId)
-                    .gt(SeckillVoucher::getStock, 0).update();
-            if (!success) {
-                // try {
-                //     Thread.sleep(10);
-                //     this.secKillVoucher(voucherId);
-                // } catch (Exception e) {
-                //     throw new RuntimeException(e);
-                // }
+        boolean success = seckillVoucherService.lambdaUpdate()
+                .setSql("stock = stock - 1")
+                .eq(SeckillVoucher::getVoucherId, voucherId)
+                .gt(SeckillVoucher::getStock, 0).update();
+        if (!success) {
+            // try {
+            //     Thread.sleep(10);
+            //     this.secKillVoucher(voucherId);
+            // } catch (Exception e) {
+            //     throw new RuntimeException(e);
+            // }
 
-                // 原因也可能是库存不足, 所以返回这个结果 -> 改成延时和自旋, 下面的代码就不用了
-                return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
-            }
-
-
-            // 7- 新增订单信息
-            VoucherOrder voucherOrder = new VoucherOrder();
-            // 设置订单id(使用全局唯一生成工具类) | 用户id | 优惠券id
-            long orderId = redisIdTool.nextId(SECKILL_ORDER);
-
-            voucherOrder.setId(orderId);
-            voucherOrder.setUserId(userId);
-            voucherOrder.setVoucherId(voucherId);
-            save(voucherOrder);
-
-            // 8- 返回结果
-            return Result.ok(orderId);
+            // 原因也可能是库存不足, 所以返回这个结果 -> 改成延时和自旋, 下面的代码就不用了
+            return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
         }
+
+
+        // 7- 新增订单信息
+        VoucherOrder voucherOrder = new VoucherOrder();
+        // 设置订单id(使用全局唯一生成工具类) | 用户id | 优惠券id
+        long orderId = redisIdTool.nextId(SECKILL_ORDER);
+
+        voucherOrder.setId(orderId);
+        voucherOrder.setUserId(userId);
+        voucherOrder.setVoucherId(voucherId);
+        save(voucherOrder);
+
+        // 8- 返回结果
+        return Result.ok(orderId);
+
         /*
             存在问题: sync锁执行到上面的括号就开始释放锁, 但是Spring管理的事务还没有提交到数据库, 而锁也已经打开了,
             此时有可能会被其他线程执行产生安全问题
