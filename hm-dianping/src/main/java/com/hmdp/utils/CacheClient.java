@@ -12,11 +12,28 @@ import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
 import static com.hmdp.utils.RedisConstants.LOCK_SHOP_TTL;
 
+/**
+ * Redis缓存工具
+ * <p>
+ * TODO:
+ *      - 缓存穿透: 指的是redis缓存中没有查找到对应缓存, 缓存未命中, 同时数据库中也未查询到相关数据.
+ *                使用缓存空值来解决, 空值设置的时间一般不应该过长.
+ *      - 缓存雪崩: 指的是大量的缓存采用了相同的失效时间, 请求全部转发到了数据库, 从而导致数据库压力骤增.
+ *                将key对应的缓存设置一个随机数, 让key均匀失效等.
+ *      - 缓存击穿: 指的是对于单个热点key具有高并发量, 在其失效的瞬间, 持续的请求就会击破缓存, 直接请求到数据库.
+ *                使用互斥锁(Mutex key); 热点key不过期, 后台异步更新; 提前使用互斥锁, 在value内部设置一个比缓存短的时间,
+ *                当异步线程发现该值快过期时, 马上延长内置的这个时间, 并从数据库重新加载数据, 设知道缓存中去.
+ * </p>
+ *
+ * @author DELL_
+ * @date 2023/02/11
+ */
 @Slf4j
 @Component
 public class CacheClient {
@@ -92,11 +109,12 @@ public class CacheClient {
             return JSONUtil.toBean(json, type);
         }
 
-        // 因为向redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
+        // 因为向redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次, 空串情况也应该返回
         if (json != null) {
             return null;
         }
 
+        // json为null值情况, 则重建
         // 4- 不存在 根据id查询数据库
         R r = dbFallback.apply(id);
 
@@ -121,6 +139,20 @@ public class CacheClient {
     /*
         泛型 和 参数的说明参考上面
      */
+
+    /**
+     * 通过逻辑缓存解决缓存
+     * @param keyPrefix     key前缀, 待缓存数据的业务前缀, 加上数据的唯一标志即可
+     * @param lockKeyPrefix 使用互斥锁时的业务前缀
+     * @param id 数据唯一标志
+     * @param type 数据类型
+     * @param dbFallback 重建缓存时查询方法的逻辑
+     * @param time 逻辑过期时间
+     * @param unit 单位
+     * @return 缓存
+     * @param <R> 缓存类型
+     * @param <ID> 待缓存数据的唯一标志
+     */
     public <R, ID> R queryWithLogicalExpire(String keyPrefix, String lockKeyPrefix,
                                             ID id,
                                             Class<R> type,
@@ -134,7 +166,11 @@ public class CacheClient {
         // 2- 判断是否存在
         if (StrUtil.isBlank(json)) {
             // 3- 未命中缓存直接返回null (一般来说不会存在这种问题 如果未命中的话那么只能说明该店铺并不是热点店铺 没有参加活动)
-            return null;
+            // 问题: 如果缓存根本未预热, 那么从redis中查询的总会是null, 所以下面的逻辑不会执行
+
+            // 3- 未命中缓存则重建缓存
+            R r = this.rebuildCache(key, lockKeyPrefix, id, dbFallback, time, unit);
+            return r;
         }
 
         // 4- 命中 需要先把json反序列化为对象
@@ -152,12 +188,23 @@ public class CacheClient {
 
 
         // 5.2- 过期 重建缓存
+
+        this.rebuildCache(key, lockKeyPrefix, id, dbFallback, time, unit);
+
+        // 6.4- 返回过期的店铺信息
+        return r;
+    }
+
+    private <R, ID> R rebuildCache(String key, String lockKeyPrefix,
+                                   ID id,
+                                   Function<ID, R> dbFallback,
+                                   Long time, TimeUnit unit) {
         // 6- 重建缓存
         String lockKey = lockKeyPrefix + id;
         // 6.1- 获取互斥锁
         boolean isLock = tryLock(lockKey);
 
-        // 6.2- 失败 返回
+        // 6.2- 失败 返回(返回过期信息)
 
         if (isLock) {
             // TODO: 6.3- 成功 开启独立线程重建缓存
@@ -165,20 +212,22 @@ public class CacheClient {
                 try {
                     // 查询数据库 -> 由于不知道具体的查询情况 因此交给调用者实现 参数为一个Function
                     R r1 = dbFallback.apply(id);
+                    System.out.println(r1);
                     // 重建缓存
                     this.setWithLogicalExpire(key, r1, time, unit);
 
+                    return r1;
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 } finally {
                     // 释放锁
                     unlock(lockKey);
+
                 }
             });
         }
 
-        // 6.4- 返回过期的店铺信息
-        return r;
+        return null;
     }
 
 
