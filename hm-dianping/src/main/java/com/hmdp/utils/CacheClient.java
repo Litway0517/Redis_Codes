@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
@@ -166,11 +165,12 @@ public class CacheClient {
         // 2- 判断是否存在
         if (StrUtil.isBlank(json)) {
             // 3- 未命中缓存直接返回null (一般来说不会存在这种问题 如果未命中的话那么只能说明该店铺并不是热点店铺 没有参加活动)
-            // 问题: 如果缓存根本未预热, 那么从redis中查询的总会是null, 所以下面的逻辑不会执行
+            /*
+                问题: 如果缓存根本未预热, 那么从redis中查询的总会是null, 所以下面的逻辑不会执行.
+                针对热点key需要使用单元测试预热
+             */
 
-            // 3- 未命中缓存则重建缓存
-            R r = this.rebuildCache(key, lockKeyPrefix, id, dbFallback, time, unit);
-            return r;
+            return null;
         }
 
         // 4- 命中 需要先把json反序列化为对象
@@ -189,16 +189,6 @@ public class CacheClient {
 
         // 5.2- 过期 重建缓存
 
-        this.rebuildCache(key, lockKeyPrefix, id, dbFallback, time, unit);
-
-        // 6.4- 返回过期的店铺信息
-        return r;
-    }
-
-    private <R, ID> R rebuildCache(String key, String lockKeyPrefix,
-                                   ID id,
-                                   Function<ID, R> dbFallback,
-                                   Long time, TimeUnit unit) {
         // 6- 重建缓存
         String lockKey = lockKeyPrefix + id;
         // 6.1- 获取互斥锁
@@ -212,23 +202,20 @@ public class CacheClient {
                 try {
                     // 查询数据库 -> 由于不知道具体的查询情况 因此交给调用者实现 参数为一个Function
                     R r1 = dbFallback.apply(id);
-                    System.out.println(r1);
                     // 重建缓存
                     this.setWithLogicalExpire(key, r1, time, unit);
-
-                    return r1;
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 } finally {
                     // 释放锁
                     unlock(lockKey);
-
                 }
             });
         }
-
-        return null;
+        // 6.4- 返回过期的店铺信息
+        return r;
     }
+
 
 
     /**

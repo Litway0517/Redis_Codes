@@ -82,7 +82,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         // 工具类解决
         Shop shop = cacheClient.queryWithLogicalExpire(
                 CACHE_SHOP_KEY, LOCK_SHOP_KEY, id, Shop.class, this::getById,
-                20L, TimeUnit.SECONDS);
+                20L, TimeUnit.MINUTES);
 
 
         // 7- 返回
