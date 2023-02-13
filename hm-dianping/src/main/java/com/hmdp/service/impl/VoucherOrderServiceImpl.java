@@ -74,6 +74,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             sync锁应该锁住的是该方法, 锁的id是用户的id
             直接调用方法时, 使用的是this对象调用, 而this对象不是Spring动态代理的对象, 因此需要通过AopContext获取到代理对象,
             同时引入aspectj依赖, 并在引导类上开启Aop对外暴露, 这样事务就不会失效了
+
+            锁失效
+                当SpringBoot服务集群部署时, 就会出现线程并发安全问题, 因为8081和8082是不一样的进程, 注意是进程. 这样就相当于是
+                两个应用, 两个进程, 两个Jvm, 两个Tomcat. 对于跨Jvm情况, synchronized锁自然会失效, 因为Jvm内部有一个锁监视器,
+                锁监视器会控制线程串行执行, 不同的Jvm自然对应不同的锁监视器, 因此每个Tomcat中都会有一个进程成功.
          */
         Long userId = UserHolder.getUser().getId();
         synchronized (userId.toString().intern()) {
