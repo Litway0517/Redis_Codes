@@ -8,8 +8,10 @@ import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdTool;
+import com.hmdp.utils.SimpleRedisLock;
 import com.hmdp.utils.UserHolder;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     @Resource
     private RedisIdTool redisIdTool;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 秒杀优惠券
@@ -81,12 +86,29 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 锁监视器会控制线程串行执行, 不同的Jvm自然对应不同的锁监视器, 因此每个Tomcat中都会有一个进程成功.
          */
         Long userId = UserHolder.getUser().getId();
-        synchronized (userId.toString().intern()) {
+
+        // 使用分布式锁解决集群部署问题
+        SimpleRedisLock redisLock = new SimpleRedisLock(stringRedisTemplate, "order:" + userId);
+
+        // 调试使用, 时间设置的长一些
+        boolean success = redisLock.tryLock(1200);
+        // 反向判断 不要把逻辑放进去if
+        if (!success) {
+            return Result.fail("请勿连续点击...");
+        }
+
+        try {
             // 获取跟事务有关的代理对象
             IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
             // 事务提交之后才会释放锁
             return proxy.createVoucherOrder(voucherId);
+        } catch (IllegalStateException e) {
+            throw new RuntimeException(e);
+        } finally {
+            redisLock.unLock();
         }
+
+
     }
 
     @Transactional
