@@ -54,6 +54,27 @@ public class SimpleRedisLock implements ILock {
         // 获取锁中的标识
         String id = stringRedisTemplate.opsForValue().get(KEY_PREFIX + name);
         if (threadId.equals(id)) {
+            /*
+                释放锁操作时, 在判断成立时发生了阻塞, 那么仍有可能误删其他线程的锁, 这里使用lua脚本解决
+                - Redis通过Lua解释器执行lua脚本, redis在2.6.0版本之后内嵌了Lua解释器
+                    通过EVAL script numkeys key [key...] arg [arg...]命令执行
+                    script是脚本内容, numkeys是key参数的个数, KEYS是key参数数组, ARGV是其他参数数组
+
+                - redis通过调用方式执行命令
+                    redis.call('命令名称(如set get)', 'key', '其他参数', ...)
+                    redis.call('set', 'name', 'Jack') <==> set name Jack
+                    redis.call是内置方法
+
+                - redis调用时添加参数
+                    上面的调用是固定的, 没有可变参数, 而使用EVAL命令时能够传参, 如下
+                    redis.call('命令名称', KEYS[1], ARGV[1]) 1 name Jack
+
+                判断锁是否存在与释放锁原子性脚本如下
+                if (redis.call('GET', KEYS[1]) == ARGV[1]) then
+                    return redis.call('DEL', KEYS[1])
+                end
+                return 0
+             */
             // 释放锁
             stringRedisTemplate.delete(KEY_PREFIX + name);
         }
