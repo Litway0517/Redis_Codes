@@ -1,8 +1,11 @@
 package com.hmdp.utils;
 
 import cn.hutool.core.lang.UUID;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 public class SimpleRedisLock implements ILock {
@@ -18,9 +21,22 @@ public class SimpleRedisLock implements ILock {
      */
     private static final String ID_PREFIX = UUID.randomUUID().toString(true) + "-";
 
+    /**
+     * DefaultRedisScript是RedisScript的一个实现
+     * 泛型是返回值的类型
+     */
+    private static final DefaultRedisScript<Long> UNLOCK_SCRIPT;
+
     public SimpleRedisLock(StringRedisTemplate stringRedisTemplate, String name) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.name = name;
+    }
+
+    static {
+        UNLOCK_SCRIPT = new DefaultRedisScript<>();
+        // ClassPathResource类用来加载resources目录下的指定文件
+        UNLOCK_SCRIPT.setLocation(new ClassPathResource(SystemConstants.LUA_SCRIPT_UNLOCK_FILENAME));
+        UNLOCK_SCRIPT.setResultType(Long.class);
     }
 
     /**
@@ -44,11 +60,21 @@ public class SimpleRedisLock implements ILock {
         return Boolean.TRUE.equals(success);
     }
 
-    /**
-     * 释放锁
-     */
     @Override
     public void unLock() {
+        // 之前版本的释放锁逻辑是两行代码, 向redis查询锁是否是该线程的, 然后再删除. 而此时改为一行代码, redis指令放到lua脚本中执行
+        stringRedisTemplate.execute(
+                UNLOCK_SCRIPT,
+                Collections.singletonList(KEY_PREFIX + name),
+                ID_PREFIX + Thread.currentThread().getId());
+
+    }
+
+    /**
+     * 释放锁, 原始版本的释放锁
+     */
+    // @Override
+    public void unLockOriginal() {
         // 获取线程标识
         String threadId = ID_PREFIX + Thread.currentThread().getId();
         // 获取锁中的标识
@@ -70,8 +96,8 @@ public class SimpleRedisLock implements ILock {
                     redis.call('命令名称', KEYS[1], ARGV[1]) 1 name Jack
 
                 判断锁是否存在与释放锁原子性脚本如下
-                if (redis.call('GET', KEYS[1]) == ARGV[1]) then
-                    return redis.call('DEL', KEYS[1])
+                if (redis.call('get', KEYS[1]) == ARGV[1]) then
+                    return redis.call('del', KEYS[1])
                 end
                 return 0
 
