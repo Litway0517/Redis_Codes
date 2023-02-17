@@ -74,6 +74,8 @@ public class SimpleRedisLock implements ILock {
                     return redis.call('DEL', KEYS[1])
                 end
                 return 0
+
+                EVAL是redis命令调用lua, script是lua调用redis -> Redis调用lua, lua调用Redis
              */
             // 释放锁
             stringRedisTemplate.delete(KEY_PREFIX + name);
