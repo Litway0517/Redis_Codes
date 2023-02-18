@@ -10,6 +10,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdTool;
 import com.hmdp.utils.SimpleRedisLock;
 import com.hmdp.utils.UserHolder;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private RedissonClient redissonClient;
 
     /**
      * 秒杀优惠券
@@ -87,11 +92,13 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
          */
         Long userId = UserHolder.getUser().getId();
 
-        // 使用分布式锁解决集群部署问题
-        SimpleRedisLock redisLock = new SimpleRedisLock(stringRedisTemplate, "order:" + userId);
+        // 使用分布式锁解决集群部署问题 -> 手写的分布式锁
+        // SimpleRedisLock redisLock = new SimpleRedisLock(stringRedisTemplate, "order:" + userId);
+        // 使用Redisson提供的工具类
+        RLock redisLock = redissonClient.getLock("lock:order:" + userId);
 
-        // 调试使用, 时间设置的长一些
-        boolean success = redisLock.tryLock(1200);
+        // 调试使用, 时间设置的长一些 -> 更改成使用Redisson的锁工具类, 不设置时间
+        boolean success = redisLock.tryLock();
         // 反向判断 不要把逻辑放进去if
         if (!success) {
             return Result.fail("请勿连续点击...");
@@ -105,7 +112,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         } catch (IllegalStateException e) {
             throw new RuntimeException(e);
         } finally {
-            redisLock.unLock();
+            redisLock.unlock();
         }
 
 
