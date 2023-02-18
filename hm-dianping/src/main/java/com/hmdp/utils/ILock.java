@@ -19,5 +19,5 @@ public interface ILock {
     /**
      * 释放锁
      */
-    void unLock();
+    void unlock();
 }

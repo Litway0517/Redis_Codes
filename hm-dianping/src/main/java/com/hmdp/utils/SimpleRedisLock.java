@@ -61,7 +61,7 @@ public class SimpleRedisLock implements ILock {
     }
 
     @Override
-    public void unLock() {
+    public void unlock() {
         // 之前版本的释放锁逻辑是两行代码, 向redis查询锁是否是该线程的, 然后再删除. 而此时改为一行代码, redis指令放到lua脚本中执行
         stringRedisTemplate.execute(
                 UNLOCK_SCRIPT,
