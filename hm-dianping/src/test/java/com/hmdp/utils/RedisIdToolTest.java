@@ -21,7 +21,7 @@ public class RedisIdToolTest {
 
     private static final long BEGIN_TIMESTAMP = 1640995200L;
 
-    private ExecutorService es = Executors.newFixedThreadPool(500);
+    private final ExecutorService es = Executors.newFixedThreadPool(500);
 
     @Test
     public void testId() throws InterruptedException {
@@ -62,6 +62,23 @@ public class RedisIdToolTest {
         long c = 1;
         long d = b | c;
         System.out.println(d);
+
+    }
+
+    @Test
+    public void lua() {
+        String script = "if (redis.call('exists', KEYS[1]) == 0) then " +
+                "redis.call('hincrby', KEYS[1], ARGV[2], 1); " +
+                "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+                "return nil; " +
+                "end; " +
+                "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
+                "redis.call('hincrby', KEYS[1], ARGV[2], 1); " +
+                "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+                "return nil; " +
+                "end; " +
+                "return redis.call('pttl', KEYS[1]);";
+        System.out.println(script);
 
     }
 
