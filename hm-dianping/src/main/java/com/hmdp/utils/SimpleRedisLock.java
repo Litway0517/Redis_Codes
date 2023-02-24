@@ -20,6 +20,9 @@ public class SimpleRedisLock implements ILock {
 
     private final String name;
 
+    /**
+     * 对应业务的锁前缀
+     */
     private static final String KEY_PREFIX = "lock:";
 
     /**
