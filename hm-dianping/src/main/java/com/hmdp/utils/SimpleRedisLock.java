@@ -41,6 +41,9 @@ public class SimpleRedisLock implements ILock {
         this.name = name;
     }
 
+    /*
+        SimpleRedisLock类初始化时执行一次static静态模块, 仅加载一次释放锁的lua脚本, 节省资源
+     */
     static {
         UNLOCK_SCRIPT = new DefaultRedisScript<>();
         // ClassPathResource类用来加载resources目录下的指定文件
