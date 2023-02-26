@@ -13,7 +13,7 @@ public class RedissonConfig {
 
     // RedissonClient是一个工厂类, 从中就能取到各种工具类
     @Bean
-    public RedissonClient redisClient() {
+    public RedissonClient redissonClient() {
         // 配置
         Config config = new Config();
         config.useSingleServer().setAddress("redis://127.0.0.1:6379").setDatabase(12);
@@ -23,7 +23,7 @@ public class RedissonConfig {
     }
 
     @Bean
-    public RedissonClient redisClient2() {
+    public RedissonClient redissonClient2() {
         // 配置
         Config config = new Config();
         config.useSingleServer().setAddress("redis://127.0.0.1:6380").setDatabase(12);
@@ -33,7 +33,7 @@ public class RedissonConfig {
     }
 
     @Bean
-    public RedissonClient redisClient3() {
+    public RedissonClient redissonClient3() {
         // 配置
         Config config = new Config();
         config.useSingleServer().setAddress("redis://127.0.0.1:6381").setDatabase(12);
