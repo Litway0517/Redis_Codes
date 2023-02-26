@@ -17,11 +17,22 @@ class RedissonTest {
     @Resource
     private RedissonClient redissonClient;
 
+    @Resource
+    private RedissonClient redissonClient2;
+
+    @Resource
+    private RedissonClient redissonClient3;
+
     private RLock lock;
 
     @BeforeEach
     void setUp() {
-        lock = redissonClient.getLock("order");
+        RLock lock1 = redissonClient.getLock("order");
+        RLock lock2 = redissonClient2.getLock("order");
+        RLock lock3 = redissonClient3.getLock("order");
+
+        // 创建连锁, getMultiLock方法是new RedissonMultiLock, 因此无论使用哪一个客户端都可以
+        lock = redissonClient.getMultiLock(lock1, lock2, lock3);
     }
 
     @Test
