@@ -12,6 +12,10 @@ import org.springframework.context.annotation.Configuration;
 public class RedissonConfig {
 
     // RedissonClient是一个工厂类, 从中就能取到各种工具类
+    /*
+        @Bean注解用于将指定方法的返回值注入到Spring容器中, Spring容器默认是单例模式, 所以需要关注Bean的名称
+        默认情况下, 使用@Bean时, 如果不指出name参数的值, 则使用方法名作为名称, 因此下面注入了三个Redis客户端实例
+     */
     @Bean
     public RedissonClient redissonClient() {
         // 配置
