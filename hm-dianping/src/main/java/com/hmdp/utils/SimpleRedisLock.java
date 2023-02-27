@@ -72,6 +72,9 @@ public class SimpleRedisLock implements ILock {
         return Boolean.TRUE.equals(success);
     }
 
+    /**
+     * 释放锁, 改成使用lua脚本释放, 确保释放锁的原子性
+     */
     @Override
     public void unlock() {
         // 之前版本的释放锁逻辑是两行代码, 向redis查询锁是否是该线程的, 然后再删除. 而此时改为一行代码, redis指令放到lua脚本中执行
