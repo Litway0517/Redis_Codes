@@ -10,6 +10,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * redisson测试
+ *
+ * @author DELL_
+ * @date 2023/02/28
+ */
 @Slf4j
 @SpringBootTest
 class RedissonTest {
