@@ -27,6 +27,7 @@ class RedissonTest {
 
     @BeforeEach
     void setUp() {
+        // 三个独立节点对应三把独立锁
         RLock lock1 = redissonClient.getLock("order");
         RLock lock2 = redissonClient2.getLock("order");
         RLock lock3 = redissonClient3.getLock("order");
