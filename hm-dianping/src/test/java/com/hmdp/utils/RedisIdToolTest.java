@@ -7,6 +7,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -98,6 +101,22 @@ public class RedisIdToolTest {
                 "end; " +
                 "return nil;";
         System.out.println(redissonUnlockScript);
+    }
+
+    @Test
+    public void hasNext() {
+        List<String> strings = new ArrayList<>();
+        strings.add("s1");
+        strings.add("s2");
+        strings.add("s3");
+
+        for (Iterator<String> iterator = strings.iterator(); iterator.hasNext();) {
+            String next = iterator.next();
+            System.out.println(next);
+
+        }
+
+
     }
 
 
