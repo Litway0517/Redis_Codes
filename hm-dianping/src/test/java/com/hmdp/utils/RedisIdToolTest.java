@@ -103,6 +103,9 @@ public class RedisIdToolTest {
         System.out.println(redissonUnlockScript);
     }
 
+    /**
+     * 测试for循环的初始化和循环成立条件, 注意初始化条件仅执行一次, 循环成立条件每次都需要判断
+     */
     @Test
     public void hasNext() {
         List<String> strings = new ArrayList<>();
