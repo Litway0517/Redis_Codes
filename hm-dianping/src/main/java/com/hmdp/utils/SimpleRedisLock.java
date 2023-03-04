@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 简单复述,锁
+ * Redis简单锁实现
  *
  * @author DELL_
  * @date 2023/02/15
