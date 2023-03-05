@@ -20,6 +20,9 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 class RedissonTest {
 
+    /**
+     * redisson客户端, 注意注入名称
+     */
     @Resource
     private RedissonClient redissonClient;
 
