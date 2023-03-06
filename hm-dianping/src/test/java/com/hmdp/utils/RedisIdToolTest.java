@@ -113,6 +113,7 @@ public class RedisIdToolTest {
         strings.add("s2");
         strings.add("s3");
 
+        // strings.iterator只是获取迭代器, 还没有开始迭代
         for (Iterator<String> iterator = strings.iterator(); iterator.hasNext();) {
             String next = iterator.next();
             System.out.println(next);
