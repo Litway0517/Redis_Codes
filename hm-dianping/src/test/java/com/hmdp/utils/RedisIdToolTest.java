@@ -85,6 +85,9 @@ public class RedisIdToolTest {
 
     }
 
+    /**
+     * redisson释放锁lua脚本
+     */
     @Test
     public void unlockRedisson() {
         String redissonUnlockScript = "if (redis.call('hexists', KEYS[1], ARGV[3]) == 0) then " +
