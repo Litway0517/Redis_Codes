@@ -118,6 +118,12 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     }
 
+    /**
+     * 创建优惠券订单
+     *
+     * @param voucherId 优惠券id
+     * @return {@link Result}
+     */
     @Transactional
     public Result createVoucherOrder(Long voucherId) {
         /*
