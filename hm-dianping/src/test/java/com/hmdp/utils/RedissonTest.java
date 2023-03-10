@@ -34,6 +34,9 @@ class RedissonTest {
 
     private RLock lock;
 
+    /**
+     * 测试方法执行前先执行该方法
+     */
     @BeforeEach
     void setUp() {
         // 三个独立节点对应三把独立锁
