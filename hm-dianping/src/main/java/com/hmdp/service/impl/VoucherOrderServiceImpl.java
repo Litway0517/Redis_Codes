@@ -90,31 +90,32 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 两个应用, 两个进程, 两个Jvm, 两个Tomcat. 对于跨Jvm情况, synchronized锁自然会失效, 因为Jvm内部有一个锁监视器,
                 锁监视器会控制线程串行执行, 不同的Jvm自然对应不同的锁监视器, 因此每个Tomcat中都会有一个进程成功.
          */
-        Long userId = UserHolder.getUser().getId();
+        // Long userId = UserHolder.getUser().getId();
 
         // 使用分布式锁解决集群部署问题 -> 手写的分布式锁
         // SimpleRedisLock redisLock = new SimpleRedisLock(stringRedisTemplate, "order:" + userId);
         // 使用Redisson提供的工具类
-        RLock redisLock = redissonClient.getLock("lock:order:" + userId);
+        // RLock redisLock = redissonClient.getLock("lock:order:" + userId);
 
         // 调试使用, 时间设置的长一些 -> 更改成使用Redisson的锁工具类, 不设置时间
-        boolean success = redisLock.tryLock();
+        // boolean success = redisLock.tryLock();
         // 反向判断 不要把逻辑放进去if
-        if (!success) {
-            return Result.fail("请勿连续点击...");
-        }
+        // if (!success) {
+        //     return Result.fail("请勿连续点击...");
+        // }
 
-        try {
+        // try {
             // 获取跟事务有关的代理对象
-            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            // IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
             // 事务提交之后才会释放锁
-            return proxy.createVoucherOrder(voucherId);
-        } catch (IllegalStateException e) {
-            throw new RuntimeException(e);
-        } finally {
-            redisLock.unlock();
-        }
+        //     return proxy.createVoucherOrder(voucherId);
+        // } catch (IllegalStateException e) {
+        //     throw new RuntimeException(e);
+        // } finally {
+        //     redisLock.unlock();
+        // }
 
+        return createVoucherOrder(voucherId);
 
     }
 
@@ -135,20 +136,32 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // 5- 一人一单功能(存在并发安全性问题)
         Long userId = UserHolder.getUser().getId();
 
-        /*
-            如果使用userId.toString作为锁的id, 那么每次都是new一个字符串(跟进源码就能发现), 所以调用intern方法字符串常量池,
-            如果字符串常量池中已有相等的string字符, 则返回池中字符串, 否则将该值加入到池中并返回引用
-         */
-
-        // 5.1- 查询订单 根据登录用户查询优惠券订单 直接使用lambdaQuery代表的就是voucherOrderService
-        Integer count = lambdaQuery().eq(VoucherOrder::getUserId, userId).eq(VoucherOrder::getVoucherId, voucherId).count();
-        // 5.2- 判断是否存在
-        if (count > 0) {
-            // 该用户已经购买过了
-            return Result.fail("该用户已经购买过本消费券了~");
+        // 创建锁对象
+        RLock redisLock = redissonClient.getLock("lock:order:" + userId);
+        // 尝试获取锁
+        boolean isLock = redisLock.tryLock();
+        // 判断
+        if (!isLock) {
+            // 获取失败, 直接返回失败或者重试
+            return Result.fail("不允许重复下单~");
         }
 
-        // 6- 扣减库存 对于最后一张优惠券有可能出现问题
+
+        try {
+            /*
+                如果使用userId.toString作为锁的id, 那么每次都是new一个字符串(跟进源码就能发现), 所以调用intern方法字符串常量池,
+                如果字符串常量池中已有相等的string字符, 则返回池中字符串, 否则将该值加入到池中并返回引用
+             */
+
+            // 5.1- 查询订单 根据登录用户查询优惠券订单 直接使用lambdaQuery代表的就是voucherOrderService
+            Integer count = lambdaQuery().eq(VoucherOrder::getUserId, userId).eq(VoucherOrder::getVoucherId, voucherId).count();
+            // 5.2- 判断是否存在
+            if (count > 0) {
+                // 该用户已经购买过了
+                return Result.fail("该用户已经购买过本消费券了~");
+            }
+
+            // 6- 扣减库存 对于最后一张优惠券有可能出现问题
             /*
                 setSql -> 实际上就是set条件 -> set stock = stock - 1
                 这里eq就是where条件 -> 要求SeckillVoucher::getVoucherId字段
@@ -159,39 +172,43 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                 - 改进: 还是改成乐观锁, 然后加上延时和自旋, 这样解决应该会更好. 待优化.
                         这里面的stock相当于乐观锁里面的version版本号, 每次操作之前对比.
              */
-        boolean success = seckillVoucherService.lambdaUpdate()
-                .setSql("stock = stock - 1")
-                .eq(SeckillVoucher::getVoucherId, voucherId)
-                .gt(SeckillVoucher::getStock, 0).update();
-        if (!success) {
-            // try {
-            //     Thread.sleep(10);
-            //     this.secKillVoucher(voucherId);
-            // } catch (Exception e) {
-            //     throw new RuntimeException(e);
-            // }
+            boolean success = seckillVoucherService.lambdaUpdate()
+                    .setSql("stock = stock - 1")
+                    .eq(SeckillVoucher::getVoucherId, voucherId)
+                    .gt(SeckillVoucher::getStock, 0).update();
+            if (!success) {
+                // try {
+                //     Thread.sleep(10);
+                //     this.secKillVoucher(voucherId);
+                // } catch (Exception e) {
+                //     throw new RuntimeException(e);
+                // }
 
-            // 原因也可能是库存不足, 所以返回这个结果 -> 改成延时和自旋, 下面的代码就不用了
-            return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
-        }
+                // 原因也可能是库存不足, 所以返回这个结果 -> 改成延时和自旋, 下面的代码就不用了
+                return Result.fail("今日优惠券已经发放完毕，请明日记着早点来呦~");
+            }
 
 
-        // 7- 新增订单信息
-        VoucherOrder voucherOrder = new VoucherOrder();
-        // 设置订单id(使用全局唯一生成工具类) | 用户id | 优惠券id
-        long orderId = redisIdTool.nextId(SECKILL_ORDER);
+            // 7- 新增订单信息
+            VoucherOrder voucherOrder = new VoucherOrder();
+            // 设置订单id(使用全局唯一生成工具类) | 用户id | 优惠券id
+            long orderId = redisIdTool.nextId(SECKILL_ORDER);
 
-        voucherOrder.setId(orderId);
-        voucherOrder.setUserId(userId);
-        voucherOrder.setVoucherId(voucherId);
-        save(voucherOrder);
+            voucherOrder.setId(orderId);
+            voucherOrder.setUserId(userId);
+            voucherOrder.setVoucherId(voucherId);
+            save(voucherOrder);
 
-        // 8- 返回结果
-        return Result.ok(orderId);
+            // 8- 返回结果
+            return Result.ok(orderId);
 
         /*
             存在问题: sync锁执行到上面的括号就开始释放锁, 但是Spring管理的事务还没有提交到数据库, 而锁也已经打开了,
             此时有可能会被其他线程执行产生安全问题
          */
+        } finally {
+            // 释放锁
+            redisLock.unlock();
+        }
     }
 }
