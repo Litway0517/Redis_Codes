@@ -14,10 +14,10 @@ public interface ILock {
      * @param timeoutSec 持有锁的时间, 超时自动释放锁, 单位秒
      * @return true代表锁获取成功; false代表锁获取失败
      */
-    boolean tryLock(long timeoutSec);
+    public boolean tryLock(long timeoutSec);
 
     /**
      * 释放锁
      */
-    void unlock();
+    public void unlock();
 }
