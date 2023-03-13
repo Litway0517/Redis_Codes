@@ -1,8 +1,10 @@
 package com.hmdp.utils;
 
 
+import cn.hutool.core.lang.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
 import static org.junit.Assert.*;
 
 @SpringBootTest
@@ -21,6 +24,9 @@ public class RedisIdToolTest {
 
     @Resource
     private RedisIdTool redisIdTool;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     private static final long BEGIN_TIMESTAMP = 1640995200L;
 
@@ -122,8 +128,19 @@ public class RedisIdToolTest {
             System.out.println(next);
 
         }
+    }
 
+    /**
+     * 添加token
+     */
+    @Test
+    public void addTokens() {
+        // 生成UUID
+        String token = UUID.randomUUID().toString(true);
 
+        // token对应的key
+        String tokenKey = LOGIN_USER_KEY + token;
+        stringRedisTemplate.opsForValue().set(tokenKey, "user");
     }
 
 
