@@ -2,6 +2,8 @@ package com.hmdp.utils;
 
 
 import cn.hutool.core.lang.UUID;
+import com.hmdp.entity.User;
+import com.hmdp.mapper.UserMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -27,6 +29,9 @@ public class RedisIdToolTest {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private UserMapper userMapper;
 
     private static final long BEGIN_TIMESTAMP = 1640995200L;
 
@@ -128,6 +133,15 @@ public class RedisIdToolTest {
             System.out.println(next);
 
         }
+    }
+
+    @Test
+
+    public void addUsers() {
+        // 数据库批量添加用户
+
+        User user = new User();
+        userMapper.insert(user);
     }
 
     /**
