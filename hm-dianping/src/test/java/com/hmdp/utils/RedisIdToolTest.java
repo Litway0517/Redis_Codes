@@ -1,7 +1,11 @@
 package com.hmdp.utils;
 
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.RandomUtil;
+import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
 import org.junit.jupiter.api.Test;
@@ -11,14 +15,13 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
+import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 import static org.junit.Assert.*;
 
 @SpringBootTest
@@ -136,25 +139,47 @@ public class RedisIdToolTest {
     }
 
     @Test
-
     public void addUsers() {
         // 数据库批量添加用户
 
+        // 创建用户
         User user = new User();
+        user.setPhone(randomPhoneNumber());
+        user.setNickName(USER_NICK_NAME_PREFIX + RandomUtil.randomString(10));
+
         userMapper.insert(user);
+
+        addTokens(user);
+    }
+
+    public String randomPhoneNumber() {
+        StringBuilder stringBuilder = new StringBuilder("1");
+        Random random = new Random();
+
+        for (int i = 0; i < 10; i++) {
+            stringBuilder.append(random.nextInt(10));
+        }
+        // System.out.println(stringBuilder.toString());
+        return stringBuilder.toString();
     }
 
     /**
      * 添加token
      */
     @Test
-    public void addTokens() {
+    public void addTokens(User user) {
         // 生成UUID
         String token = UUID.randomUUID().toString(true);
-
         // token对应的key
         String tokenKey = LOGIN_USER_KEY + token;
-        stringRedisTemplate.opsForValue().set(tokenKey, "user");
+
+        // 将用户信息脱敏
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+
+        stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
+
     }
 
 
