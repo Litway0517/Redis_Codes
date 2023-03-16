@@ -152,6 +152,11 @@ public class RedisIdToolTest {
         addTokens(user);
     }
 
+    /**
+     * 生成随机电话号码
+     *
+     * @return {@link String}
+     */
     public String randomPhoneNumber() {
         StringBuilder stringBuilder = new StringBuilder("1");
         Random random = new Random();
