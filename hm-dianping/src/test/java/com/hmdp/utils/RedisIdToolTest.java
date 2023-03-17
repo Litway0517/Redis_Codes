@@ -138,6 +138,9 @@ public class RedisIdToolTest {
         }
     }
 
+    /**
+     * 添加用户
+     */
     @Test
     public void addUsers() {
         // 数据库批量添加用户
