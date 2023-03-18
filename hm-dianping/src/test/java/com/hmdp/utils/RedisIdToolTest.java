@@ -152,6 +152,7 @@ public class RedisIdToolTest {
 
         userMapper.insert(user);
 
+        // 添加用户token
         addTokens(user);
     }
 
