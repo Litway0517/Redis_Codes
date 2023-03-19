@@ -165,6 +165,7 @@ public class RedisIdToolTest {
         StringBuilder stringBuilder = new StringBuilder("1");
         Random random = new Random();
 
+        // 生成后面十位数
         for (int i = 0; i < 10; i++) {
             stringBuilder.append(random.nextInt(10));
         }
