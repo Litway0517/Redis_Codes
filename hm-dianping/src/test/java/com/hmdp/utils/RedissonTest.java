@@ -39,12 +39,15 @@ class RedissonTest {
      */
     @BeforeEach
     void setUp() {
-        // 三个独立节点对应三把独立锁
+        // 三个独立Redis节点对应三把独立锁
         RLock lock1 = redissonClient.getLock("order");
         RLock lock2 = redissonClient2.getLock("order");
         RLock lock3 = redissonClient3.getLock("order");
 
-        // 创建连锁, getMultiLock方法是new RedissonMultiLock, 因此无论使用哪一个客户端都可以
+        /*
+            创建联锁, getMultiLock方法是new RedissonMultiLock, 因此无论使用哪一个客户端都可以
+            联锁在第二次获取时, 锁的过期时间会被看门狗重置, 前提是没有手动传入释放时间
+         */
         lock = redissonClient.getMultiLock(lock1, lock2, lock3);
     }
 
