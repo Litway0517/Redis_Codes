@@ -82,6 +82,9 @@ public class RedisIdToolTest {
 
     }
 
+    /**
+     * Redisson获取锁脚本
+     */
     @Test
     public void lua() {
         String script = "if (redis.call('exists', KEYS[1]) == 0) then " +
