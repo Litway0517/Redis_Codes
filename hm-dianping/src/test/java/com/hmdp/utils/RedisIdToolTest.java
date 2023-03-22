@@ -5,6 +5,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
@@ -193,6 +194,12 @@ public class RedisIdToolTest {
 
         stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
 
+    }
+
+    @Test
+    public void selectUser() {
+        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        List<User> userList = userMapper.selectList(userLambdaQueryWrapper);
     }
 
 
