@@ -196,6 +196,9 @@ public class RedisIdToolTest {
 
     }
 
+    /**
+     * 查询用户信息
+     */
     @Test
     public void selectUser() {
         LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
