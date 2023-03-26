@@ -203,7 +203,8 @@ public class RedisIdToolTest {
     public void selectUser() {
         // 查询条件
         LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        
+
+        // 查询所有用户
         List<User> userList = userMapper.selectList(userLambdaQueryWrapper);
     }
 
