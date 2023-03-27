@@ -206,6 +206,13 @@ public class RedisIdToolTest {
 
         // 查询所有用户
         List<User> userList = userMapper.selectList(userLambdaQueryWrapper);
+
+        // 遍历将用户信息脱敏
+        for (User user : userList) {
+            UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+            Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                    CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+        }
     }
 
 
