@@ -215,5 +215,12 @@ public class RedisIdToolTest {
         }
     }
 
+    @Test
+    public void isLoginUser(User user) {
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+    }
+
 
 }
