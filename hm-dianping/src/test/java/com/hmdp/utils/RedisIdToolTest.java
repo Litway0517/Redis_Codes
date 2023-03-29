@@ -215,6 +215,11 @@ public class RedisIdToolTest {
         }
     }
 
+    /**
+     * 查询用户是否登录
+     *
+     * @param user 用户
+     */
     @Test
     public void isLoginUser(User user) {
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
