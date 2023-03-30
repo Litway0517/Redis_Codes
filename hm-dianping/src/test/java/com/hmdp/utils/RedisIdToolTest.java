@@ -227,5 +227,11 @@ public class RedisIdToolTest {
                 CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
     }
 
+    @Test
+    public void isRedisUser() {
+        // 扫描指定前缀的key
+
+    }
+
 
 }
