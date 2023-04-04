@@ -227,6 +227,9 @@ public class RedisIdToolTest {
                 CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
     }
 
+    /**
+     * 是否为Redis中存储的用户
+     */
     @Test
     public void isRedisUser() {
         // 扫描指定前缀的key
