@@ -234,6 +234,8 @@ public class RedisIdToolTest {
     public void isRedisUser() {
         // 扫描指定前缀的key
 
+        // 对扫描到的结果便便利, 判断用户是否在登陆用户中
+
     }
 
 
