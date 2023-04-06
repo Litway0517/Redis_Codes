@@ -233,8 +233,10 @@ public class RedisIdToolTest {
     @Test
     public void isRedisUser() {
         // 扫描指定前缀的key
+        Set<String> keys = stringRedisTemplate.keys("*");
+        System.out.println(keys);
 
-        // 对扫描到的结果便便利, 判断用户是否在登陆用户中
+        // 对扫描到的结果遍历, 判断用户是否在登陆用户中
 
     }
 
