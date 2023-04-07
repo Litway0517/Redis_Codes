@@ -25,6 +25,12 @@ import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
 import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 import static org.junit.Assert.*;
 
+/**
+ * 复述,id工具测试
+ *
+ * @author DELL_
+ * @date null
+ */
 @SpringBootTest
 public class RedisIdToolTest {
 
