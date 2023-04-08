@@ -26,7 +26,7 @@ import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 import static org.junit.Assert.*;
 
 /**
- * 复述,id工具测试
+ * Redis测试工具
  *
  * @author DELL_
  * @date null
