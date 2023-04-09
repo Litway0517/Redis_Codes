@@ -11,7 +11,7 @@ import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.*;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -42,6 +42,9 @@ public class RedisIdToolTest {
 
     @Resource
     private UserMapper userMapper;
+
+    @Resource
+    private RedisTemplate redisTemplate;
 
     private static final long BEGIN_TIMESTAMP = 1640995200L;
 
@@ -243,6 +246,23 @@ public class RedisIdToolTest {
         System.out.println(keys);
 
         // 对扫描到的结果遍历, 判断用户是否在登陆用户中
+
+    }
+
+    @Test
+    public void testRedisScanInstruction() {
+        Set<String> result = (Set<String>) redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
+            // 这个就是扫描到的key值组成的set集合
+            Set<String> set = new HashSet<>();
+            Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match("Login:*").count(10).build());
+
+            while (cursor.hasNext()) {
+                System.out.println("cursorId: " + cursor.getCursorId() + "cursorPosition: " + cursor.getPosition());
+                set.add(new String(cursor.next()));
+            }
+            return set;
+        });
+        System.out.println(result);
 
     }
 
