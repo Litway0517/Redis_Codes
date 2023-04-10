@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.*;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -254,11 +255,17 @@ public class RedisIdToolTest {
         Set<String> result = (Set<String>) redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
             // 这个就是扫描到的key值组成的set集合
             Set<String> set = new HashSet<>();
-            Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match("Login:*").count(10).build());
+            Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match("Login:*").count(5).build());
 
-            while (cursor.hasNext()) {
-                System.out.println("cursorId: " + cursor.getCursorId() + "cursorPosition: " + cursor.getPosition());
-                set.add(new String(cursor.next()));
+            try {
+                while (cursor.hasNext()) {
+                    System.out.println("cursorId: " + cursor.getCursorId() + "cursorPosition: " + cursor.getPosition());
+                    set.add(new String(cursor.next()));
+                }
+                // 游标cursor需要注意关闭, 否则会占用连接, 同时控制台也会提醒
+                cursor.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
             return set;
         });
