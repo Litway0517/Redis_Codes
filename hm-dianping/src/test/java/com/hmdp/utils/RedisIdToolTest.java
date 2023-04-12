@@ -271,6 +271,12 @@ public class RedisIdToolTest {
         });
         System.out.println(result);
 
+        for (String key : result) {
+            // 根据key获取value
+            Map<Object, Object> value = stringRedisTemplate.opsForHash().entries(key);
+            System.out.println(value);
+        }
+
     }
 
 
