@@ -277,6 +277,14 @@ public class RedisIdToolTest {
             System.out.println(value);
         }
 
+        for (String key : result) {
+            // 根据key获取value中的指定字段
+            String nickName = (String) stringRedisTemplate.opsForHash().get(key, "nickName");
+            System.out.println(nickName);
+            List<Object> list = stringRedisTemplate.opsForHash().multiGet(key, Arrays.asList("nickName", "id"));
+            System.out.println(list);
+        }
+
     }
 
 
