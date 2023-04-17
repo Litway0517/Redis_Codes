@@ -250,6 +250,9 @@ public class RedisIdToolTest {
 
     }
 
+    /**
+     * Redis的扫描指令, 需要使用一个connection执行scan
+     */
     @Test
     public void testRedisScanInstruction() {
         Set<String> result = (Set<String>) redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
