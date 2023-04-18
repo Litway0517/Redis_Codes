@@ -284,6 +284,7 @@ public class RedisIdToolTest {
             // 根据key获取value中的指定字段
             String nickName = (String) stringRedisTemplate.opsForHash().get(key, "nickName");
             System.out.println(nickName);
+            // 传入一个集合, 通过multiGet方法一次性获取key对应的多个字段的值
             List<Object> list = stringRedisTemplate.opsForHash().multiGet(key, Arrays.asList("nickName", "id"));
             System.out.println(list);
         }
