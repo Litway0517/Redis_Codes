@@ -4,7 +4,6 @@ package com.hmdp.utils;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
-import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hmdp.dto.UserDTO;
@@ -262,6 +261,7 @@ public class RedisIdToolTest {
             Map<Object, Object> entry = stringRedisTemplate.opsForHash().entries(key);
             System.out.println(entry);
             Long id = new Long(entry.get("id").toString());
+            // 注意这里不能写成一条return语句, 含义不一致
             if (id.equals(user.getId())) {
                 return true;
             }
