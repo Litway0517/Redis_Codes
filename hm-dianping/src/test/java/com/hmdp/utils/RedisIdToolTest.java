@@ -4,6 +4,7 @@ package com.hmdp.utils;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hmdp.dto.UserDTO;
@@ -237,17 +238,54 @@ public class RedisIdToolTest {
                 CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
     }
 
+    @Test
+    public void testIsRedisUser() {
+        User user = new User();
+        user.setId(2102L);
+        boolean flag = isRedisUser(user);
+        System.out.println(flag);
+    }
+
     /**
      * 是否为Redis中存储的用户
      */
-    @Test
-    public void isRedisUser() {
+    public boolean isRedisUser(User user) {
         // 扫描指定前缀的key
         Set<String> keys = stringRedisTemplate.keys("*");
         System.out.println(keys);
 
         // 对扫描到的结果遍历, 判断用户是否在登陆用户中
 
+        Set<String> scanKeys = scanRedisMatchKeys("Login:*");
+
+        for (String key : scanKeys) {
+            Map<Object, Object> entry = stringRedisTemplate.opsForHash().entries(key);
+            System.out.println(entry);
+            Long id = new Long(entry.get("id").toString());
+            if (id.equals(user.getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Set<String> scanRedisMatchKeys(String keyPattern) {
+        return (Set<String>) redisTemplate.execute((RedisCallback) connection -> {
+            Set<String> set = new HashSet<>();
+            Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(keyPattern).count(1000).build());
+
+            try {
+                while (cursor.hasNext()) {
+                    // System.out.println("cursorId: " + cursor.getCursorId() + "cursorPosition: " + cursor.getPosition());
+                    set.add(new String(cursor.next()));
+                }
+                // 游标cursor需要注意关闭, 否则会占用连接, 同时控制台也会提醒
+                cursor.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return set;
+        });
     }
 
     /**
