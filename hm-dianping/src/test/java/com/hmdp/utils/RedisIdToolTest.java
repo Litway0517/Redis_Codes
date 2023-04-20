@@ -216,6 +216,16 @@ public class RedisIdToolTest {
 
         // 查询所有用户
         List<User> userList = userMapper.selectList(userLambdaQueryWrapper);
+        
+        // 判断每一个用户是否登录, 未登录则将其登录, 并将token存储到redis
+        Integer count = 0;
+        for (User user : userList) {
+            if (!isRedisUser(user)) {
+                addTokens(user);
+                count++;
+            }
+        }
+        System.out.println(count);
 
         // 遍历将用户信息脱敏
         for (User user : userList) {
@@ -259,7 +269,6 @@ public class RedisIdToolTest {
 
         for (String key : scanKeys) {
             Map<Object, Object> entry = stringRedisTemplate.opsForHash().entries(key);
-            System.out.println(entry);
             Long id = new Long(entry.get("id").toString());
             // 注意这里不能写成一条return语句, 含义不一致
             if (id.equals(user.getId())) {
