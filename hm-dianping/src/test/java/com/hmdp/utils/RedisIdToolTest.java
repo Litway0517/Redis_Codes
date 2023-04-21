@@ -247,6 +247,9 @@ public class RedisIdToolTest {
                 CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
     }
 
+    /**
+     * 测试是否为Redis中登陆的用户
+     */
     @Test
     public void testIsRedisUser() {
         User user = new User();
