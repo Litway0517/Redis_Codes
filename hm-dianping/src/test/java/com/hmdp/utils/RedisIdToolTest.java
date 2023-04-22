@@ -266,10 +266,9 @@ public class RedisIdToolTest {
         Set<String> keys = stringRedisTemplate.keys("*");
         System.out.println(keys);
 
-        // 对扫描到的结果遍历, 判断用户是否在登陆用户中
-
         Set<String> scanKeys = scanRedisMatchKeys("Login:*");
 
+        // 对扫描到的结果遍历, 判断用户是否在登陆用户中
         for (String key : scanKeys) {
             Map<Object, Object> entry = stringRedisTemplate.opsForHash().entries(key);
             Long id = new Long(entry.get("id").toString());
