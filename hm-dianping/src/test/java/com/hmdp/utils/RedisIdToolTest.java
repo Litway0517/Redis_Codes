@@ -280,6 +280,12 @@ public class RedisIdToolTest {
         return false;
     }
 
+    /**
+     * 扫描Redis中指定模式的keys
+     *
+     * @param keyPattern 关键模式
+     * @return {@link Set}<{@link String}>
+     */
     public Set<String> scanRedisMatchKeys(String keyPattern) {
         return (Set<String>) redisTemplate.execute((RedisCallback) connection -> {
             Set<String> set = new HashSet<>();
