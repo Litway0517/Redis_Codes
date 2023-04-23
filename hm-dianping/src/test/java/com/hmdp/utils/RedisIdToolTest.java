@@ -223,6 +223,8 @@ public class RedisIdToolTest {
             Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
                     CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
         }
+
+
     }
 
     /**
@@ -287,6 +289,7 @@ public class RedisIdToolTest {
             List<Object> list = stringRedisTemplate.opsForHash().multiGet(key, Arrays.asList("nickName", "id"));
             System.out.println(list);
         }
+
 
     }
 
