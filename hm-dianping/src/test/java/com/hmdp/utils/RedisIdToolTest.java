@@ -273,6 +273,7 @@ public class RedisIdToolTest {
             Map<Object, Object> entry = stringRedisTemplate.opsForHash().entries(key);
             Long id = new Long(entry.get("id").toString());
             // 注意这里不能写成一条return语句, 含义不一致
+            // 提示的代码不一定正确, 需要看一下逻辑
             if (id.equals(user.getId())) {
                 return true;
             }
@@ -293,7 +294,6 @@ public class RedisIdToolTest {
 
             try {
                 while (cursor.hasNext()) {
-                    // System.out.println("cursorId: " + cursor.getCursorId() + "cursorPosition: " + cursor.getPosition());
                     set.add(new String(cursor.next()));
                 }
                 // 游标cursor需要注意关闭, 否则会占用连接, 同时控制台也会提醒
