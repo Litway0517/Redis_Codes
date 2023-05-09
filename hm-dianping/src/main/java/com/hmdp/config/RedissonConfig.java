@@ -20,13 +20,13 @@ public class RedissonConfig {
     public RedissonClient redissonClient() {
         // 配置
         Config config = new Config();
-        config.useSingleServer().setAddress("redis://127.0.0.1:6379").setDatabase(12);
+        config.useSingleServer().setAddress("redis://127.0.0.1:16379").setPassword("root@B16").setDatabase(12);
 
         // 创建RedissonClient对象
         return Redisson.create(config);
     }
 
-    @Bean
+    /* @Bean
     public RedissonClient redissonClient2() {
         // 配置
         Config config = new Config();
@@ -44,5 +44,5 @@ public class RedissonConfig {
 
         // 创建RedissonClient对象
         return Redisson.create(config);
-    }
+    } */
 }
