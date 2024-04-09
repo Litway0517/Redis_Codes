@@ -43,7 +43,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
     public Result selectAllShopType() {
         // 1- 查询redis中是否存在商户类型
         Set<String> shopTypeSet = stringRedisTemplate.opsForZSet().range(CACHE_SHOP_TYPE_KEY, 0, 100);
-        if (shopTypeSet != null && shopTypeSet.size() != 0) {
+        if (shopTypeSet != null && !shopTypeSet.isEmpty()) {
             // 2- 有 -> 直接返回
             List<ShopType> shopTypeList = shopTypeSet.stream().map(shopType -> JSONUtil.toBean(shopType, ShopType.class)).collect(Collectors.toList());
             return Result.ok(shopTypeList);
@@ -53,7 +53,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         List<ShopType> shopType = lambdaQuery().orderByAsc(ShopType::getSort).list();
 
         // 4- 判断是否存在
-        if (shopType != null && shopType.size() != 0) {
+        if (shopType != null && !shopType.isEmpty()) {
             // 5- 将数据组织好存储到redis  存储到Redis使用Zset类型, 对应ZSetOperations.TypedTuple
 
             Set<ZSetOperations.TypedTuple<String>> shopTypeTuples = new HashSet<ZSetOperations.TypedTuple<String>>();
