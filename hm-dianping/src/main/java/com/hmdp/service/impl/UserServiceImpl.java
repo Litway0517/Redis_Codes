@@ -130,11 +130,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 7.3 存储 -> 改为存储到redis key的结构是token value的结构是hash
         String tokenKey = LOGIN_USER_KEY + token;
+        // 向redis中保存脱敏用户的信息, 将token作为键, 用户作为value这样就对应了. 前面的拦截器检查如果请求没有token直接放行
         stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
         // 设置有效期
         stringRedisTemplate.expire(tokenKey, LOGIN_USER_TTL, TimeUnit.MINUTES);
 
-        // 返回token
+        // 返回token, 前端通过sessionStorage将token保存到浏览器, 前端所有请求通过common.js预处理发送请求
         return Result.ok(token);
     }
 

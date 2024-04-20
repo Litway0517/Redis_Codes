@@ -44,7 +44,7 @@ public class CommonInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 1- 获取session -> 改为获取请求头中的token
         String token = request.getHeader(AUTHORIZATION);
         if (StrUtil.isBlank(token)) {

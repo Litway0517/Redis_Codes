@@ -84,14 +84,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                 CACHE_SHOP_KEY, LOCK_SHOP_KEY, id, Shop.class, this::getById,
                 20L, TimeUnit.MINUTES);
 
-
         // 7- 返回
         return Result.ok(shop);
     }
 
 
     /**
-     * 缓存穿透解决方法: 缓存未命中 且 数据库中也不存在该店铺id对应的数据 -> 通过缓存空值来解决
+     * 缓存穿透解决方法: 缓存未命中 且 数据库中也不存在该店铺id对应的数据 -> 通过缓存空值来解决, 另一种是使用布隆过滤器
      * @param id id
      * @return 结果
      */
@@ -103,10 +102,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         if (StrUtil.isNotBlank(shopJson)) {
             // 3- 存在直接返回
             return JSONUtil.toBean(shopJson, Shop.class);
-
         }
 
-        // (当数据库也不存在相关数据时, 想redis存储一个短暂时间的null)因此redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
+        // (当数据库也不存在相关数据时, 向redis存储一个短暂时间的null)因此redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
         if (shopJson != null) {
             return null;
         }
@@ -130,6 +128,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
 
     /**
+     * 缓存击穿 -> 使用锁解决
      * 互斥锁 -> 利用互斥锁解决缓存击穿问题 这里实际上采用了redis的setnx指令 因为setnx只有第一个设置的线程能够设置成功
      *          因此 后面的线程只能等待重试 这样就做到了只有其中一个线程能够拿到锁 进而进行重建缓存
      * @param id id
@@ -143,10 +142,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         if (StrUtil.isNotBlank(shopJson)) {
             // 3- 存在直接返回
             return JSONUtil.toBean(shopJson, Shop.class);
-
         }
 
-        // (当数据库也不存在相关数据时, 想redis存储一个短暂时间的null)因此redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
+        // (当数据库也不存在相关数据时, 向redis存储一个短暂时间的null)因此redis中存储的可能是空值 也可能是 店铺真实值 所以这里再判断一次
         if (shopJson != null) {
             return null;
         }
@@ -198,7 +196,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     private static final ExecutorService CACHE_REBUILD_EXECUTOR = Executors.newFixedThreadPool(10);
 
     /**
-     * 使用逻辑缓存解决 缓存击穿
+     * 缓存击穿 -> 使用逻辑缓存解决
      * @param id id
      * @return 结果
      */
