@@ -225,6 +225,18 @@ public class CacheClient {
         return r;
     }
 
+    /**
+     * 重建缓存, 返回值为CompletableFuture, 异步线程的执行结果需要使用future接收
+     * @param lockKeyPrefix 锁前缀
+     * @param id id
+     * @param dbFallback 方法
+     * @param time 时间
+     * @param unit 单位
+     * @param key 锁
+     * @return 重建的缓存内容
+     * @param <R> 返回值类型
+     * @param <ID> 缓存内容对应的唯一id
+     */
     private <R, ID> CompletableFuture<R> rebuildCache(String lockKeyPrefix, ID id, Function<ID, R> dbFallback, Long time, TimeUnit unit, String key) {
         CompletableFuture<R> futureResult = new CompletableFuture<>();
         // 6- 重建缓存
