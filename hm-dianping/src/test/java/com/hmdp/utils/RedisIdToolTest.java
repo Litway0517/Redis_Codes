@@ -5,10 +5,14 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.hmdp.constant.ShopConstant;
 import com.hmdp.dto.UserDTO;
+import com.hmdp.entity.Shop;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.UserMapper;
+import com.hmdp.service.impl.ShopServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.*;
@@ -21,8 +25,9 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
+import static com.hmdp.utils.RedisConstants.*;
 import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
 import static org.junit.Assert.*;
 
@@ -46,6 +51,9 @@ public class RedisIdToolTest {
 
     @Resource
     private RedisTemplate redisTemplate;
+
+    @Resource
+    private ShopServiceImpl shopService;
 
     private static final long BEGIN_TIMESTAMP = 1640995200L;
 
@@ -72,6 +80,16 @@ public class RedisIdToolTest {
         latch.await();
         long end = System.currentTimeMillis();
         System.out.println("time = " + (end - begin));
+    }
+
+    @Test
+    public void testHotKey() {
+        Integer id = 1;
+        RedisData redisData = new RedisData();
+        Shop shop = shopService.getById(id);
+        redisData.setData(shop);
+        redisData.setExpireTime(LocalDateTime.now().plusSeconds(30L));
+        stringRedisTemplate.opsForValue().set(ShopConstant.CACHE_SHOP_KEY + id, JSONUtil.toJsonStr(redisData));
     }
 
     @Test
