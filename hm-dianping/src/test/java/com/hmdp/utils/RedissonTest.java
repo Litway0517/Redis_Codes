@@ -58,7 +58,7 @@ class RedissonTest {
             tryLock(long time, TimeUnit unit)
             如果给出了time参数的话, 当线程获取锁失败后不会立即返回false, 而会在time规定的时间内重试, 如果time时间内仍未获取锁, 则返回false
          */
-        boolean isLock = lock.tryLock(1L, TimeUnit.SECONDS);
+        boolean isLock = lock.tryLock(10L, TimeUnit.SECONDS);
         if (!isLock) {
             log.error("获取锁失败 .... 1");
             return;

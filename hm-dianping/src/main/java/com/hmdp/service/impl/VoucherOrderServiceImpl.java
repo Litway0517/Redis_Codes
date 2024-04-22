@@ -11,7 +11,6 @@ import com.hmdp.utils.RedisIdTool;
 import com.hmdp.utils.UserHolder;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,9 +35,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     @Resource
     private RedisIdTool redisIdTool;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
 
     @Resource
     private RedissonClient redissonClient;
@@ -147,6 +143,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
         try {
             /*
+                synchronized锁
                 如果使用userId.toString作为锁的id, 那么每次都是new一个字符串(跟进源码就能发现), 所以调用intern方法字符串常量池,
                 如果字符串常量池中已有相等的string字符, 则返回池中字符串, 否则将该值加入到池中并返回引用
              */
