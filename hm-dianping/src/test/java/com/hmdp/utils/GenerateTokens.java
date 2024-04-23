@@ -1,0 +1,133 @@
+package com.hmdp.utils;
+
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.RandomUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hmdp.entity.User;
+import com.hmdp.service.impl.UserServiceImpl;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import javax.annotation.Resource;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
+import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
+
+@SpringBootTest
+public class GenerateTokens {
+
+    @Resource
+    private UserServiceImpl userService;
+
+    private final ExecutorService es = Executors.newFixedThreadPool(500);
+
+    @Resource
+    private CacheClient cacheClient;
+
+    // 使用线程池插入, 但是是一条一条插入, 比下面的批量插入慢太多了
+    @Test
+    public void genUsers() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(100);
+
+        Runnable task = () -> {
+            for (int i = 0; i < 10; i++) {
+                // 1- 创建用户
+                User user = new User();
+                String phone = genRandomPhoneNumber();
+                user.setPhone(phone);
+                user.setNickName(USER_NICK_NAME_PREFIX + RandomUtil.randomString(10));
+                // 2- 保存用户
+                userService.save(user);
+            }
+            latch.countDown();
+        };
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 100; i++) {
+            es.submit(task);
+        }
+        latch.await();
+        long end = System.currentTimeMillis();
+        System.out.println("运行时间" + (end - start));
+    }
+
+    // 批量插入
+    @Test
+    public void genUsers2() {
+        ArrayList<User> list = new ArrayList<User>();
+        for (int i = 0; i < 1000; i++) {
+            User user = new User();
+            user.setPhone(genRandomPhoneNumber());
+            user.setNickName(USER_NICK_NAME_PREFIX + RandomUtil.randomString(10));
+            list.add(user);
+        }
+
+        userService.saveBatch(list);
+    }
+
+    @Test
+    public void delUsers() {
+        // userService.removeByIds();
+    }
+
+    @Test
+    public void genTokens() {
+        Integer count = userService.lambdaQuery().count();
+        Page<User> page = userService.lambdaQuery()
+                .select(User::getId, User::getPhone, User::getNickName)
+                .page(new Page<>(1, 1000));
+        List<User> userList = page.getRecords();
+
+        ArrayList<String> tokens = new ArrayList<>();
+        userList.forEach(user -> {
+            // token前缀
+            String token = UUID.randomUUID().toString(true);
+            // 存储到redis中的token
+            String tokenKey = LOGIN_USER_KEY + token;
+            tokens.add(tokenKey);
+
+            cacheClient.setWithLogicalExpire(tokenKey, user,30L, TimeUnit.MINUTES);
+        });
+
+        // 写入到txt
+        try {
+            FileWriter fileWriter = new FileWriter("classpath:tokens.txt");
+            tokens.forEach(token -> {
+                try {
+                    fileWriter.write(token);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public String genRandomPhoneNumber() {
+        Random rand = new Random();
+
+        // 随机选择前三位数字
+        String firstThreeDigits = String.format("1%s", rand.nextInt(8) + 3);
+
+        // 生成后八位随机数字
+        StringBuilder lastEightDigits = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            lastEightDigits.append(rand.nextInt(10));
+        }
+
+        // 拼接成完整的手机号码
+        return firstThreeDigits + lastEightDigits;
+    }
+
+}
