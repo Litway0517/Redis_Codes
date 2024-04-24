@@ -2,7 +2,7 @@ package com.hmdp.utils;
 
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hmdp.entity.User;
 import com.hmdp.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -81,11 +81,10 @@ public class GenerateTokens {
 
     @Test
     public void genTokens() {
-        Integer count = userService.lambdaQuery().count();
-        Page<User> page = userService.lambdaQuery()
+        List<User> userList = userService.list(new LambdaQueryWrapper<>(User.class)
                 .select(User::getId, User::getPhone, User::getNickName)
-                .page(new Page<>(1, 1000));
-        List<User> userList = page.getRecords();
+                .gt(User::getId, 1037)
+        );
 
         ArrayList<String> tokens = new ArrayList<>();
         userList.forEach(user -> {
@@ -93,17 +92,19 @@ public class GenerateTokens {
             String token = UUID.randomUUID().toString(true);
             // 存储到redis中的token
             String tokenKey = LOGIN_USER_KEY + token;
-            tokens.add(tokenKey);
+            tokens.add(token);
 
             cacheClient.setWithLogicalExpire(tokenKey, user,30L, TimeUnit.MINUTES);
         });
 
         // 写入到txt
         try {
-            FileWriter fileWriter = new FileWriter("classpath:tokens.txt");
+            FileWriter fileWriter = new FileWriter("L:\\IDEA-Java\\15-HM-Redis\\Redis_Code\\Redis_Code\\Redis_Code\\hm-dianping\\src\\main\\resources\\tokens.txt");
             tokens.forEach(token -> {
                 try {
                     fileWriter.write(token);
+                    fileWriter.write("\n");
+                    fileWriter.flush();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -128,6 +129,12 @@ public class GenerateTokens {
 
         // 拼接成完整的手机号码
         return firstThreeDigits + lastEightDigits;
+    }
+
+    @Test
+    public void testPath() {
+        String path = this.getClass().getResource("classpath:tokens.txt").getPath();
+        System.out.println(path);
     }
 
 }
