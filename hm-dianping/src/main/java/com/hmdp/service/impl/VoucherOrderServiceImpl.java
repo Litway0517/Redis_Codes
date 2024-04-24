@@ -1,6 +1,7 @@
 package com.hmdp.service.impl;
 
 import com.hmdp.dto.Result;
+import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.mapper.VoucherOrderMapper;
@@ -8,14 +9,19 @@ import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdTool;
+import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
 
 import static com.hmdp.utils.RedisConstants.SECKILL_ORDER;
 
@@ -34,10 +40,46 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private ISeckillVoucherService seckillVoucherService;
 
     @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
     private RedisIdTool redisIdTool;
 
     @Resource
     private RedissonClient redissonClient;
+
+    private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
+    static {
+        SECKILL_SCRIPT = new DefaultRedisScript<>();
+        // ClassPathResource类用来加载resources目录下的指定文件
+        SECKILL_SCRIPT.setLocation(new ClassPathResource(SystemConstants.LUA_SCRIPT_SECKILL_FILENAME));
+        SECKILL_SCRIPT.setResultType(Long.class);
+    }
+
+
+    @Override
+    public Result secKillVoucher(Long voucherId) {
+        // 获取用户
+        UserDTO user = UserHolder.getUser();
+        Long userId = user.getId();
+        // 1. 执行lua脚本, 参数分别是, redis脚本内容, 脚本需要使用的keys, 脚本需要的args, 并且args只能是string类型
+        Long result = stringRedisTemplate.execute(
+                SECKILL_SCRIPT,
+                Collections.emptyList(),
+                voucherId.toString(), userId.toString()
+        );
+        // 2. 判断结果是否为0
+        int r = result.intValue();
+        if (r != 0) {
+            // 2.1. 不为0, 表示没有购买资格
+            return Result.fail(r == 1 ? "库存不足" : "不允许重复下单");
+        }
+        // 2.2. 为0, 表示有购买资格, 把下单信息保存到阻塞队列
+        long orderId = redisIdTool.nextId(SECKILL_ORDER);
+
+        // 3. 返回订单id
+        return Result.ok(orderId);
+    }
 
     /**
      * 秒杀优惠券
@@ -45,8 +87,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
      * @param voucherId 优惠券id
      * @return 结果
      */
-    @Override
-    public Result secKillVoucher(Long voucherId) {
+    // @Override
+    public Result secKillVoucher_(Long voucherId) {
         // 1- 根据优惠券id查询优惠券信息
         SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
         if (seckillVoucher == null) {
@@ -137,7 +179,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // 判断
         if (!isLock) {
             // 获取失败, 直接返回失败或者重试
-            return Result.fail("不允许重复下单~");
+            return Result.fail("抢购人数较多，请重试~");
         }
 
 

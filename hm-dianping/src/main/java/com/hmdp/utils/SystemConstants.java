@@ -7,4 +7,5 @@ public class SystemConstants {
     public static final int MAX_PAGE_SIZE = 10;
 
     public static final String LUA_SCRIPT_UNLOCK_FILENAME = "unlock.lua";
+    public static final String LUA_SCRIPT_SECKILL_FILENAME = "seckill.lua";
 }
