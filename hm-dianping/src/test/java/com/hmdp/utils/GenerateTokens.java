@@ -1,23 +1,24 @@
 package com.hmdp.utils;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.Resource;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
 import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
@@ -31,7 +32,7 @@ public class GenerateTokens {
     private final ExecutorService es = Executors.newFixedThreadPool(500);
 
     @Resource
-    private CacheClient cacheClient;
+    private StringRedisTemplate stringRedisTemplate;
 
     // 使用线程池插入, 但是是一条一条插入, 比下面的批量插入慢太多了
     @Test
@@ -94,7 +95,10 @@ public class GenerateTokens {
             String tokenKey = LOGIN_USER_KEY + token;
             tokens.add(token);
 
-            cacheClient.setWithLogicalExpire(tokenKey, user,30L, TimeUnit.MINUTES);
+            UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+            Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                    CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+            stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
         });
 
         // 写入到txt
