@@ -1,5 +1,6 @@
 -- KEYS[1]这个是锁的key
 -- ARGV[1]是超时时间, ARGV[2]是线程id
+-- 调用脚本的时候传入的参数会给出keys和argv, 而且argv必须是string类型
 
 -- 如果锁不存在
 if (redis.call('exists', KEYS[1]) == 0) then

@@ -22,6 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.hmdp.utils.RedisConstants.SECKILL_ORDER;
 
@@ -48,6 +52,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedissonClient redissonClient;
 
+    // redis脚本
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
     static {
         SECKILL_SCRIPT = new DefaultRedisScript<>();
@@ -56,7 +61,21 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         SECKILL_SCRIPT.setResultType(Long.class);
     }
 
+    // 使用Blockingqueue创建一个阻塞队列, 如果队列中没有元素, 监听该阻塞队列的线程将会被阻塞, 有元素则会被唤醒
+    private BlockingQueue<VoucherOrder> voucherOrder = new ArrayBlockingQueue<>(1024 * 1024);
+    // 创建一个线程池用于监听这个队列
+    private static final ExecutorService SECKILL_ORDER_HANDLER = Executors.newSingleThreadExecutor();
 
+    // 定义内部类用来处理阻塞队列
+    private class SeckillOrderHandler implements Runnable{
+
+        @Override
+        public void run() {
+            
+        }
+    }
+
+    // 直接在redis中判断用户是否满足购买资格
     @Override
     public Result secKillVoucher(Long voucherId) {
         // 获取用户
@@ -76,6 +95,14 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
         // 2.2. 为0, 表示有购买资格, 把下单信息保存到阻塞队列
         long orderId = redisIdTool.nextId(SECKILL_ORDER);
+
+        // 2.3. 创建voucher
+        VoucherOrder voucherOrder = new VoucherOrder();
+        voucherOrder.setId(orderId);
+        voucherOrder.setUserId(userId);
+        // 保存到阻塞队列
+
+
 
         // 3. 返回订单id
         return Result.ok(orderId);
