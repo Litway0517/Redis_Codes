@@ -28,4 +28,10 @@ public interface IVoucherOrderService extends IService<VoucherOrder> {
      * @return {@link Result}
      */
     Result createVoucherOrder(Long voucherId);
+
+    /**
+     * 创建订单优惠券
+     * @param voucherOrder 优惠券
+     */
+    void createVoucherOrder(VoucherOrder voucherOrder);
 }

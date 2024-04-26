@@ -1,5 +1,7 @@
 package com.hmdp.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.SeckillVoucher;
@@ -7,18 +9,20 @@ import com.hmdp.entity.VoucherOrder;
 import com.hmdp.mapper.VoucherOrderMapper;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdTool;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -37,6 +41,7 @@ import static com.hmdp.utils.RedisConstants.SECKILL_ORDER;
  * @author 虎哥
  * @since 2021-12-22
  */
+@Slf4j
 @Service("voucherOrderService")
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements IVoucherOrderService {
 
@@ -62,18 +67,58 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     }
 
     // 使用Blockingqueue创建一个阻塞队列, 如果队列中没有元素, 监听该阻塞队列的线程将会被阻塞, 有元素则会被唤醒
-    private BlockingQueue<VoucherOrder> voucherOrder = new ArrayBlockingQueue<>(1024 * 1024);
+    private BlockingQueue<VoucherOrder> voucherOrderQueue = new ArrayBlockingQueue<>(1024 * 1024);
     // 创建一个线程池用于监听这个队列
     private static final ExecutorService SECKILL_ORDER_HANDLER = Executors.newSingleThreadExecutor();
 
-    // 定义内部类用来处理阻塞队列
-    private class SeckillOrderHandler implements Runnable{
+    // 当服务启动之后就应该监听阻塞队列, 初始化VoucherOrderServiceImpl之后就应该执行任务, 使用Spring提供的@PostConstruct注解
+    @PostConstruct
+    public void init() {
+        SECKILL_ORDER_HANDLER.submit(new SeckillOrderHandler());
+    }
 
+
+    // 定义内部类用来处理阻塞队列
+    private class SeckillOrderHandler implements Runnable {
         @Override
         public void run() {
-            
+            while (true) {
+                // 1. 获取队列中的订单信息
+                VoucherOrder voucherOrder = null;
+                try {
+                    voucherOrder = voucherOrderQueue.take();
+                } catch (Exception e) {
+                    log.error("处理订单异常", e);
+                }
+                // 2. 创建订单
+                handlerVoucherOrder(voucherOrder);
+            }
         }
     }
+
+    // 创建订单
+    private void handlerVoucherOrder(VoucherOrder voucherOrder) {
+        // 获取用户的时候不能使用UserHolder, 因为这个任务是通过开启新的线程执行的, 没有用户信息, 需要从voucherOrder中取
+        // 1. 获取用户
+        Long userId = voucherOrder.getUserId();
+        // 2. 创建锁, 实际上这里可以不创建, 兜底策略
+        RLock lock = redissonClient.getLock("lok:order:" + userId);
+        // 3. 获取锁
+        boolean isLock = lock.tryLock();
+        if (!isLock) {
+            log.error("不允许重复下单");
+            return;
+        }
+        try {
+            // 使用代理对象创建订单, 防止事务失效, 代理对象在主线程中获取
+            proxy.createVoucherOrder(voucherOrder);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // 代理对象
+    private IVoucherOrderService proxy;
 
     // 直接在redis中判断用户是否满足购买资格
     @Override
@@ -96,14 +141,17 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // 2.2. 为0, 表示有购买资格, 把下单信息保存到阻塞队列
         long orderId = redisIdTool.nextId(SECKILL_ORDER);
 
-        // 2.3. 创建voucher
+        // 2.3. 创建voucherOrder
         VoucherOrder voucherOrder = new VoucherOrder();
         voucherOrder.setId(orderId);
         voucherOrder.setUserId(userId);
+        voucherOrder.setVoucherId(voucherId);
+
         // 保存到阻塞队列
+        voucherOrderQueue.add(voucherOrder);
 
-
-
+        // 获取跟事务有关的代理对象 -> 不能在handlerVoucherOrder方法中获取, 因为子线程AopContext获取不到代理对象
+        proxy = (IVoucherOrderService) AopContext.currentProxy();
         // 3. 返回订单id
         return Result.ok(orderId);
     }
@@ -274,5 +322,37 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             // 释放锁
             redisLock.unlock();
         }
+    }
+
+    /**
+     * 创建订单优惠券
+     *
+     * @param voucherOrder 优惠券
+     */
+    @Override
+    public void createVoucherOrder(VoucherOrder voucherOrder) {
+        Long userId = voucherOrder.getUserId();
+        // 1- 查询订单 根据登录用户查询优惠券订单 直接使用lambdaQuery代表的就是voucherOrderService
+        Long voucherId = voucherOrder.getVoucherId();
+        Integer count = getBaseMapper().selectCount(new LambdaQueryWrapper<VoucherOrder>()
+                .eq(VoucherOrder::getUserId, userId)
+                .eq(VoucherOrder::getVoucherId, voucherId));
+        // 2- 判断是否存在
+        if (count > 0) {
+            // 该用户已经购买过了
+            log.info("该用户已经购买过本消费券了~");
+            // 注意要返回, 否则下面的save方法会调用
+            return;
+        }
+        // 有抢购资格, 但是扣减库存失败, 这种情况概率比较小
+        boolean success = seckillVoucherService.lambdaUpdate()
+                .setSql("stock = stock - 1")
+                .eq(SeckillVoucher::getVoucherId, voucherId)
+                .gt(SeckillVoucher::getStock, 0).update();
+        if (!success) {
+            log.error("异常处理, 用户具有购买资格, 但是扣减库存失败");
+            return;
+        }
+        save(voucherOrder);
     }
 }
