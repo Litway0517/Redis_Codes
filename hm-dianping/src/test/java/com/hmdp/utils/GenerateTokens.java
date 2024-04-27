@@ -10,6 +10,7 @@ import com.hmdp.entity.User;
 import com.hmdp.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.Resource;
@@ -17,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -176,6 +178,24 @@ public class GenerateTokens {
     public void testPath() {
         String path = this.getClass().getResource("classpath:tokens.txt").getPath();
         System.out.println(path);
+    }
+
+    @Test
+    public void testRedisStream() {
+        List<MapRecord<String, Object, Object>> list1 = stringRedisTemplate.opsForStream().read(
+                Consumer.from("g1", "c1"),
+                StreamReadOptions.empty().count(1).block(Duration.ofSeconds(2)),
+                StreamOffset.create("stream.orders", ReadOffset.lastConsumed())
+        );
+
+        List<MapRecord<String, Object, Object>> list2 = stringRedisTemplate.opsForStream().read(
+                Consumer.from("g1", "c1"),
+                StreamReadOptions.empty().count(1).block(Duration.ofSeconds(2)),
+                StreamOffset.create("stream.orders", ReadOffset.from("0"))
+        );
+
+        System.out.println(list1);
+        System.out.println(list2);
     }
 
 }

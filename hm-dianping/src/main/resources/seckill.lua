@@ -7,6 +7,8 @@
 local voucherId = ARGV[1]
 -- 1.2 用户id
 local userId = ARGV[2]
+-- 1.3 订单id
+local id = ARGV[3]
 
 -- 2. 数据key
 -- 2.1. 库存key
@@ -31,4 +33,6 @@ end
 redis.call('incrby', stockKey, -1)
 -- 3.5. 下单(保存用户)
 redis.call('sadd', orderKey, userId)
+-- 3.6. 直接向stream中存入信息 XADD stream.orders * k1 v1 k2 v2, 订单id直接改成id, 这样和VoucherOrder实体类的成员变量名称一致
+redis.call('xadd', 'stream.orders', '*', 'userId', userId, 'voucherId', voucherId, 'id', id)
 return 0
