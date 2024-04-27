@@ -74,12 +74,12 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     // 当服务启动之后就应该监听阻塞队列, 初始化VoucherOrderServiceImpl之后就应该执行任务, 使用Spring提供的@PostConstruct注解
     @PostConstruct
     public void init() {
-        SECKILL_ORDER_HANDLER.submit(new SeckillOrderHandler());
+        SECKILL_ORDER_HANDLER.submit(new VoucherOrderHandler());
     }
 
 
     // 定义内部类用来处理阻塞队列
-    private class SeckillOrderHandler implements Runnable {
+    private class VoucherOrderHandler implements Runnable {
         @Override
         public void run() {
             while (true) {
@@ -225,8 +225,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // } finally {
         //     redisLock.unlock();
         // }
-
-        return createVoucherOrder(voucherId);
+        IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+        return proxy.createVoucherOrder(voucherId);
 
     }
 
@@ -330,6 +330,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
      * @param voucherOrder 优惠券
      */
     @Override
+    @Transactional
     public void createVoucherOrder(VoucherOrder voucherOrder) {
         Long userId = voucherOrder.getUserId();
         // 1- 查询订单 根据登录用户查询优惠券订单 直接使用lambdaQuery代表的就是voucherOrderService

@@ -13,12 +13,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.Resource;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
 import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
@@ -78,6 +81,40 @@ public class GenerateTokens {
     @Test
     public void delUsers() {
         // userService.removeByIds();
+    }
+
+    @Test
+    public void loginUsers() {
+        List<User> userList = userService.list(new LambdaQueryWrapper<User>(User.class)
+                .select(User::getId, User::getPhone, User::getNickName)
+                .orderByDesc(User::getId)
+                .last("limit 1000")
+        );
+
+        ArrayList<String> tokens = new ArrayList<>();
+        try {
+            FileReader fileReader = new FileReader("L:\\IDEA-Java\\15-HM-Redis\\Redis_Code\\Redis_Code\\Redis_Code\\hm-dianping\\src\\main\\resources\\tokens.txt");
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                tokens.add(line);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // 登录用户
+        IntStream.range(0, userList.size())
+                        .forEach(index -> {
+                            User user = userList.get(index);
+                            String token = tokens.get(index);
+
+                            String tokenKey = LOGIN_USER_KEY + token;
+                            UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+                            Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                                    CopyOptions.create().setIgnoreError(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+                            stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
+                        });
     }
 
     @Test
