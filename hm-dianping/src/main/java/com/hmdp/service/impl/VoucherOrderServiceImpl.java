@@ -90,6 +90,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         Long userId = user.getId();
         // 获取订单id
         long orderId = redisIdTool.nextId(SECKILL_ORDER);
+
+        // 代理对象
+        proxy = (IVoucherOrderService) AopContext.currentProxy();
+
         // 执行lua脚本, 参数分别是, redis脚本内容, 脚本需要使用的keys, 脚本需要的args, 并且args只能是string类型
         Long result = stringRedisTemplate.execute(
                 SECKILL_SCRIPT,
@@ -103,8 +107,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail(r == 1 ? "库存不足" : "不允许重复下单");
         }
 
-        // 代理对象
-        proxy = (IVoucherOrderService) AopContext.currentProxy();
         // 3. 返回订单id
         return Result.ok(orderId);
     }
@@ -139,8 +141,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                     Map<Object, Object> value = record.getValue();
                     VoucherOrder voucherOrder = BeanUtil.fillBeanWithMap(value, new VoucherOrder(), true);
                     // 4. 如果成功则可以下单
-                    handlerVoucherOrder(voucherOrder);
-                    // 5. ACK确认 SACK stream.orders g1 id, 哪一个队列中的消息id被哪一个组消费完成
+                    proxy.createVoucherOrder(voucherOrder);
+                    // 5. ACK确认 XACK stream.orders g1 id, 哪一个队列中的消息id被哪一个组消费完成
                     stringRedisTemplate.opsForStream().acknowledge(queueName, "g1", record.getId());
                 } catch (Exception e) {
                     log.error("处理订单异常", e);
@@ -170,8 +172,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                     Map<Object, Object> value = record.getValue();
                     VoucherOrder voucherOrder = BeanUtil.fillBeanWithMap(value, new VoucherOrder(), true);
                     // 4. 如果成功则可以下单
-                    handlerVoucherOrder(voucherOrder);
-                    // 5. ACK确认 SACK stream.orders g1 id, 哪一个队列中的消息id被哪一个组消费完成
+                    proxy.createVoucherOrder(voucherOrder);
+                    // 5. ACK确认 XACK stream.orders g1 id, 哪一个队列中的消息id被哪一个组消费完成
                     stringRedisTemplate.opsForStream().acknowledge(queueName, "g1", record.getId());
                 } catch (Exception e) {
                     // 再次出现异常时不需要处理, 继续进行下一次循环取数据
@@ -217,7 +219,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // 1. 获取用户
         Long userId = voucherOrder.getUserId();
         // 2. 创建锁, 实际上这里可以不创建, 兜底策略
-        RLock lock = redissonClient.getLock("lok:order:" + userId);
+        RLock lock = redissonClient.getLock("lock:order:" + userId);
         // 3. 获取锁
         boolean isLock = lock.tryLock();
         if (!isLock) {
