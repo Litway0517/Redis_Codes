@@ -60,9 +60,7 @@ public class BlogController {
      */
     @PutMapping("/like/{id}")
     public Result likeBlog(@PathVariable("id") Long id) {
-        // 修改点赞数量
-        blogService.lambdaUpdate()
-                .setSql(StrUtil.isNotBlank(id.toString()), "liked = liked + 1").eq(Blog::getId, id).update();
+        blogService.likeBlog(id);
         return Result.ok();
     }
 
