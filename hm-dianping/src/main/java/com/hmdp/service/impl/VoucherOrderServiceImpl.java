@@ -130,7 +130,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                             StreamReadOptions.empty().count(1).block(Duration.ofSeconds(2)),
                             StreamOffset.create(queueName, ReadOffset.lastConsumed())
                     );
-                    System.out.println(list);
+                    // System.out.println(list);
                     // 2. 判断消息读取是否成功
                     if (list == null || list.isEmpty()) {
                         // 如果失败, 说明没有消息, 继续下一次循环
