@@ -21,6 +21,7 @@ public class FollowController {
 
     @Resource
     private IFollowService iFollowservice;
+
     /**
      * @param followUserId 用户id
      * @param isFollow 是否关注
@@ -38,5 +39,14 @@ public class FollowController {
     @GetMapping("/or/not/{id}")
     public Result isFollow(@PathVariable("id") Long id) {
         return iFollowservice.isFollow(id);
+    }
+
+    /**
+     * @param id 用户id
+     * @return {@link Result }
+     */
+    @GetMapping("/common/{id}")
+    public Result followCommons(@PathVariable("id") Long id) {
+        return iFollowservice.followCommons(id);
     }
 }
