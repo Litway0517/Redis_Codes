@@ -30,8 +30,6 @@ public class BlogController {
 
     @Resource
     private IBlogService blogService;
-    @Resource
-    private IUserService userService;
 
     /**
      * 保存博客笔记
@@ -96,8 +94,23 @@ public class BlogController {
         return blogService.queryHotBlog(current);
     }
 
+    /**
+     * 根据id查询帖子
+     * @param id 帖子id
+     * @return {@link Result}
+     */
     @GetMapping("/{id}")
     public Result queryBlogById(@PathVariable("id") Long id) {
         return blogService.queryById(id);
+    }
+
+    /**
+     * 查询帖子的点赞用户
+     * @param id 帖子id
+     * @return {@link Result}
+     */
+    @GetMapping("/likes/{id}")
+    public Result queryBlogLikes(@PathVariable("id") Long id) {
+        return blogService.queryBlogLikesById(id);
     }
 }

@@ -30,4 +30,10 @@ public interface IBlogService extends IService<Blog> {
      * @param id 帖子id
      */
     void likeBlog(Long id);
+
+    /**
+     * @param id 帖子id
+     * @return {@link Result}
+     */
+    Result queryBlogLikesById(Long id);
 }
