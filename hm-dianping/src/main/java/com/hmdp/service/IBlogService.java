@@ -15,6 +15,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface IBlogService extends IService<Blog> {
 
     /**
+     * @param blog 帖子
+     * @return boolean
+     */
+    Result saveBlog(Blog blog);
+
+    /**
      * @param current 当前页
      * @return {@link Result}
      */

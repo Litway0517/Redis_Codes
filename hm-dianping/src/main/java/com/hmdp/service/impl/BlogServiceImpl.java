@@ -10,9 +10,11 @@ import com.hmdp.dto.BlogVo;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
+import com.hmdp.entity.Follow;
 import com.hmdp.entity.User;
 import com.hmdp.mapper.BlogMapper;
 import com.hmdp.service.IBlogService;
+import com.hmdp.service.IFollowService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
@@ -43,6 +45,40 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private IFollowService followService;
+
+    /**
+     * @param blog 帖子
+     * @return {@link Result}
+     */
+    @Override
+    public Result saveBlog(Blog blog) {
+        // 1. 获取登录用户
+        UserDTO user = UserHolder.getUser();
+        blog.setUserId(user.getId());
+        // 2. 保存探店博文
+        boolean isSuccess = save(blog);
+        if (!isSuccess) {
+            return Result.fail("新增笔记失败");
+        }
+        // 3. 查询博主的所有粉丝, 需要去follow表中查询, 博主id就是当前登录用户id, follow表中follow_user_id=登录用户id
+        List<Follow> follows = followService.list(new LambdaQueryWrapper<>(Follow.class)
+                .select(Follow::getUserId)
+                .eq(Follow::getFollowUserId, user.getId())
+        );
+        // 4. 推送笔记id给所有粉丝, 实现粉丝的收件箱, 使用redis的zset结构
+        for (Follow follow : follows) {
+            // 4.1 获取粉丝id
+            Long userId = follow.getUserId();
+            // 4.2 推送, 这个key是收件箱的
+            String key = "feed:" + userId;
+            stringRedisTemplate.opsForZSet().add(key, blog.getId().toString(), System.currentTimeMillis());
+        }
+        // 返回id
+        return Result.ok(blog.getId());
+    }
 
     /**
      * @param current 当前页数
