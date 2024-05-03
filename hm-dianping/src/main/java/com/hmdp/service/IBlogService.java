@@ -42,4 +42,11 @@ public interface IBlogService extends IService<Blog> {
      * @return {@link Result}
      */
     Result queryBlogLikesById(Long id);
+
+    /**
+     * @param max 每一次最大查询值
+     * @param offset 偏移量
+     * @return {@link Result }
+     */
+    Result queryBlogOfFollow(Long max, Integer offset);
 }

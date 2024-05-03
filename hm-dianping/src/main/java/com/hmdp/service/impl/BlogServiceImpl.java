@@ -6,8 +6,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import com.hmdp.dto.BlogVo;
 import com.hmdp.dto.Result;
+import com.hmdp.dto.ScrollResult;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.Follow;
@@ -19,15 +21,18 @@ import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.hmdp.utils.RedisConstants.BLOG_LIKED_KEY;
+import static com.hmdp.utils.RedisConstants.FEED_KEY;
 
 /**
  * <p>
@@ -48,6 +53,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
     @Resource
     private IFollowService followService;
+
+    @Resource
+    private BlogMapper blogMapper;
 
     /**
      * @param blog 帖子
@@ -73,7 +81,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             // 4.1 获取粉丝id
             Long userId = follow.getUserId();
             // 4.2 推送, 这个key是收件箱的
-            String key = "feed:" + userId;
+            String key = FEED_KEY + userId;
             stringRedisTemplate.opsForZSet().add(key, blog.getId().toString(), System.currentTimeMillis());
         }
         // 返回id
@@ -202,6 +210,69 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
                 .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
                 .collect(Collectors.toList());
         return Result.ok(userDTOList);
+    }
+
+    /**
+     * @param max    每一次最大查询值
+     * @param offset 偏移量
+     * @return {@link Result }
+     */
+    @Override
+    public Result queryBlogOfFollow(Long max, Integer offset) {
+        // 1. 获取当前登录用户
+        UserDTO user = UserHolder.getUser();
+        Long userId = user.getId();
+        // 2. 查询收件箱
+        String key = FEED_KEY + userId;
+        Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet()
+                .reverseRangeByScoreWithScores(key, 0, max, offset, 2);
+        // 3. 非空判断
+        if (typedTuples == null || typedTuples.isEmpty()) {
+            return Result.ok();
+        }
+        // 4. 解析数据blogId, minTime(时间戳), offset
+        List<Long> ids = new ArrayList<>(typedTuples.size());   // 大小和set集合一样避免需要扩容影响效率
+        long minTime = 0;
+        // 计数器, 与最小时间戳相同的个数
+        int os = 1;
+        for (ZSetOperations.TypedTuple<String> tuple : typedTuples) {
+            // 4.1. 获取id
+            ids.add(Long.valueOf(tuple.getValue()));
+            // 4.2. 获取分数(时间戳), 初始化为0, 遍历时最后一个元素赋值即为最小值
+            long time = tuple.getScore().longValue();
+            if (time == minTime) {
+                // 在遍历过程中, 取出来的元素时间戳与minTime相同计数器+1
+                os++;
+            } else {
+                // 如果取出来的time与minTime不相等, 则更新最小时间戳, 同时os要重置. 注意时间戳时降序排序的, 不相等则说明取出的时间戳更小
+                minTime = time;
+                os = 1;
+            }
+        }
+
+        // 5. 查询关注用户推送的笔记
+        String idStr = StrUtil.join(",", ids);
+        // 使用mapper调用 -> 条件MPJLambdaWrapper
+        List<Blog> blogs = blogMapper.selectJoinList(Blog.class, new MPJLambdaWrapper<Blog>()
+                .selectAll(Blog.class)
+                .in(Blog::getId, ids)
+                .last("ORDER BY FIELD(id, " + idStr + ")")
+        );
+
+        for (Blog blog : blogs) {
+            // 5.1. 查询blog有关的用户
+            queryUserByBlog(blog);
+            // 5.2. 查询blog是否被点赞
+            isBlogLiked(blog);
+        }
+
+        // 6. 封装并返回
+        ScrollResult r = new ScrollResult();
+        r.setList(blogs);
+        r.setOffset(os);
+        r.setMinTime(minTime);
+
+        return Result.ok(r);
     }
 
     /**

@@ -87,6 +87,7 @@ public class BlogController {
 
     /**
      * 根据id查询帖子
+     *
      * @param id 帖子id
      * @return {@link Result}
      */
@@ -97,6 +98,7 @@ public class BlogController {
 
     /**
      * 查询帖子的点赞用户
+     *
      * @param id 帖子id
      * @return {@link Result}
      */
@@ -107,7 +109,7 @@ public class BlogController {
 
     /**
      * @param current 当前页
-     * @param userId 用户id
+     * @param userId  用户id
      * @return {@link Result }
      */
     @GetMapping("/of/user")
@@ -117,10 +119,16 @@ public class BlogController {
         // 根据用户查询
         Page<Blog> page = blogService.page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE),
                 new LambdaQueryWrapper<>(Blog.class)
-                .eq(Blog::getUserId, userId)
+                        .eq(Blog::getUserId, userId)
         );
         // 获取当前页数据
         List<Blog> records = page.getRecords();
         return Result.ok(records);
+    }
+
+    @GetMapping("/of/follow")
+    public Result queryBlogOfFollow(
+            @RequestParam("lastId") Long max, @RequestParam(value = "offset", defaultValue = "0") Integer offset) {
+        return blogService.queryBlogOfFollow(max, offset);
     }
 }
