@@ -8,4 +8,5 @@ public class SystemConstants {
 
     public static final String LUA_SCRIPT_UNLOCK_FILENAME = "unlock.lua";
     public static final String LUA_SCRIPT_SECKILL_FILENAME = "seckill.lua";
+    public static final String LUA_SCRIPT_REMOVE_FEED_FILENAME = "remove_feed.lua";
 }

@@ -20,7 +20,7 @@ import javax.annotation.Resource;
 public class FollowController {
 
     @Resource
-    private IFollowService iFollowservice;
+    private IFollowService followService;
 
     /**
      * @param followUserId 用户id
@@ -29,7 +29,7 @@ public class FollowController {
      */
     @PutMapping("/{id}/{isFollow}")
     public Result follow(@PathVariable("id") Long followUserId, @PathVariable("isFollow") Boolean isFollow) {
-        return iFollowservice.follow(followUserId, isFollow);
+        return followService.follow(followUserId, isFollow);
     }
 
     /**
@@ -38,7 +38,7 @@ public class FollowController {
      */
     @GetMapping("/or/not/{id}")
     public Result isFollow(@PathVariable("id") Long id) {
-        return iFollowservice.isFollow(id);
+        return followService.isFollow(id);
     }
 
     /**
@@ -47,6 +47,6 @@ public class FollowController {
      */
     @GetMapping("/common/{id}")
     public Result followCommons(@PathVariable("id") Long id) {
-        return iFollowservice.followCommons(id);
+        return followService.followCommons(id);
     }
 }

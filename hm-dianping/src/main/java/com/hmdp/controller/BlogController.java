@@ -70,8 +70,6 @@ public class BlogController {
         // 获取当前页数据
         List<Blog> records = page.getRecords();
         return Result.ok(records);
-
-        // return Result.fail("未知错误");
     }
 
     /**
