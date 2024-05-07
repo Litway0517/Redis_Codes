@@ -2,7 +2,6 @@ package com.hmdp.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -94,12 +93,11 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 // 传入的是6, 7, 15格式的字符串, 在lua脚本中进行了拼接成table, 最终结果正确
                 String idsStr = StrUtil.join(",", ids);
                 // redis本身没有提供批量移除API, 这里使用lua脚本实现
-                String r = stringRedisTemplate.execute(
+                stringRedisTemplate.execute(
                         REMOVE_FEED_SCRIPT,
                         Collections.emptyList(),
                         userId.toString(), idsStr
                 );
-                System.out.println(r);
             }
         }
         return Result.ok();

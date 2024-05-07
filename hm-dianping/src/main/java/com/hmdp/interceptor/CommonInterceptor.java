@@ -78,7 +78,7 @@ public class CommonInterceptor implements HandlerInterceptor {
             TODO: 7- 刷新token的有效期 即用户登录状态的有效期
             只有用户连续30分钟不操作才会在redis中清楚这个用户 这也是session的做法
          */
-        stringRedisTemplate.expire(loginUserKey, RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(loginUserKey, RedisConstants.LOGIN_USER_TTL, TimeUnit.HOURS);
 
         // 放行
         return true;
