@@ -28,4 +28,6 @@ public interface IShopService extends IService<Shop> {
      * @return 结果
      */
     public Result updateShopById(Shop shop);
+
+    Result queryOfType(Integer typeId, Integer current, Double x, Double y);
 }

@@ -69,14 +69,12 @@ public class ShopController {
     @GetMapping("/of/type")
     public Result queryShopByType(
             @RequestParam("typeId") Integer typeId,
-            @RequestParam(value = "current", defaultValue = "1") Integer current
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @RequestParam(value = "x", required = false) Double x,
+            @RequestParam(value = "y", required = false) Double y
     ) {
-        // 根据类型分页查询 -> 改为使用lambda查询
-        Page<Shop> page = shopService.lambdaQuery()
-                .eq(StrUtil.isNotBlank(typeId.toString()), Shop::getTypeId, typeId)
-                .page(new Page<Shop>(current, SystemConstants.DEFAULT_PAGE_SIZE));
-        // 返回数据
-        return Result.ok(page.getRecords());
+        // 根据距离分页排序查询
+        return shopService.queryOfType(typeId, current, x, y);
     }
 
     /**

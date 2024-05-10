@@ -11,7 +11,8 @@ spring:
     username: root
     password: root
   redis:
-    host: localhost
+#    host: localhost
+    host: 192.168.64.128
     port: 6379
     # 选择12号库
     database: 12

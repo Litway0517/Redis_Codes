@@ -310,15 +310,11 @@ public class RedisIdToolTest {
             Set<String> set = new HashSet<>();
             Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(keyPattern).count(1000).build());
 
-            try {
-                while (cursor.hasNext()) {
-                    set.add(new String(cursor.next()));
-                }
-                // 游标cursor需要注意关闭, 否则会占用连接, 同时控制台也会提醒
-                cursor.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            while (cursor.hasNext()) {
+                set.add(new String(cursor.next()));
             }
+            // 游标cursor需要注意关闭, 否则会占用连接, 同时控制台也会提醒
+            cursor.close();
             return set;
         });
     }
@@ -333,16 +329,12 @@ public class RedisIdToolTest {
             Set<String> set = new HashSet<>();
             Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match("Login:*").count(5).build());
 
-            try {
-                while (cursor.hasNext()) {
-                    System.out.println("cursorId: " + cursor.getCursorId() + "cursorPosition: " + cursor.getPosition());
-                    set.add(new String(cursor.next()));
-                }
-                // 游标cursor需要注意关闭, 否则会占用连接, 同时控制台也会提醒
-                cursor.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            while (cursor.hasNext()) {
+                System.out.println("cursorId: " + cursor.getCursorId() + "cursorPosition: " + cursor.getPosition());
+                set.add(new String(cursor.next()));
             }
+            // 游标cursor需要注意关闭, 否则会占用连接, 同时控制台也会提醒
+            cursor.close();
             return set;
         });
         System.out.println(result);

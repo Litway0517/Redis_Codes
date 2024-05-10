@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.hmdp.utils.RedisConstants.SHOP_GEO_KEY;
+
 @SpringBootTest
 public class GeoDataTest {
 
@@ -34,7 +36,7 @@ public class GeoDataTest {
         for (Map.Entry<Long, List<Shop>> entry : map.entrySet()) {
             // 3.1 获取类型id
             Long typeId = entry.getKey();
-            String key = "shop:geo:" + typeId;
+            String key = SHOP_GEO_KEY + typeId;
             // 3.2 获取同类型店铺的集合
             List<Shop> value = entry.getValue();
             List<RedisGeoCommands.GeoLocation<String>> locations = new ArrayList<>();
