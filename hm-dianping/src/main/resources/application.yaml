@@ -11,8 +11,8 @@ spring:
     username: root
     password: root
   redis:
-#    host: localhost
-    host: 192.168.64.128
+    host: localhost
+#    host: 192.168.64.128 # geosearch命令需要6.2版本redis, 所以用linux上面的redis
     port: 6379
     # 选择12号库
     database: 12

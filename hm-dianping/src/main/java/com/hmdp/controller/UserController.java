@@ -116,4 +116,14 @@ public class UserController {
         // 返回
         return Result.ok(userDTO);
     }
+
+    /**
+     * 签到
+     *
+     * @return {@link Result }
+     */
+    @PostMapping("/sign")
+    public Result sign() {
+        return userService.sign();
+    }
 }
