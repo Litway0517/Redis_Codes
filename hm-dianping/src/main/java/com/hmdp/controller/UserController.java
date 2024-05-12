@@ -126,4 +126,15 @@ public class UserController {
     public Result sign() {
         return userService.sign();
     }
+
+    /**
+     * 统计当前最大连续签到天数
+     *
+     * @return {@link Result }
+     */
+    @GetMapping("/sign/count")
+    public Result count() {
+        return userService.signCount();
+    }
+
 }

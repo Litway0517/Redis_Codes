@@ -32,4 +32,6 @@ public interface IUserService extends IService<User> {
     public Result login(LoginFormDTO loginForm);
 
     Result sign();
+
+    Result signCount();
 }
